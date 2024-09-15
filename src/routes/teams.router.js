@@ -1,6 +1,7 @@
 import express from 'express';
 import joi from 'joi';
 import asyncHandler from 'express-async-handler';
+import { prisma } from '../utils/prisma/index.js';
 
 const router = express.Router();
 
@@ -20,6 +21,9 @@ router.post(
 
     const MAX_STARTING_COUNT = 3;
 
+    //@todo: test UserId 지울 것
+    const userId = 1;
+
     // 대상 선수 조회
     const targetPlayer = await prisma.usersPlayers.findFirst({
       where: {
@@ -30,10 +34,10 @@ router.post(
 
     if (!targetPlayer) {
       // 대상 선수가 없는 경우,
-      throw new StatusError('해당 선수 조회에 실패하였습니다.', StatusCodes.BAD_REQUEST);
-    } else if (targetPlayer.isStarting) {
+      throw new Error('해당 선수 조회에 실패하였습니다.');
+    } else if (targetPlayer.startingLine) {
       // 이미 선발인 경우,
-      throw new StatusError('이미 선발선수로 등록되어있습니다.', StatusCodes.BAD_REQUEST);
+      throw new Error('이미 선발선수로 등록되어있습니다.');
     }
 
     const startingPlayers = await prisma.usersPlayers.findMany({
@@ -46,10 +50,7 @@ router.post(
 
     // 기존 선발선수의 수가 ${MAX_STARTING_COUNT}명 이상일 경우 // 3
     if (startingPlayers.length >= MAX_STARTING_COUNT) {
-      throw new StatusError(
-        `선발선수는 최대 ${MAX_STARTING_COUNT}명까지만 등록 가능합니다.`,
-        StatusCodes.BAD_REQUEST,
-      );
+      throw new Error('선발선수는 최대 ${MAX_STARTING_COUNT}명까지만 등록 가능합니다.');
     }
 
     // 선발 여부 변경
