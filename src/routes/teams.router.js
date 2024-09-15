@@ -44,7 +44,7 @@ router.post(
       select: { playerId: true },
       where: {
         userId: userId,
-        isStarting: true,
+        startingLine: true,
       },
     });
 
@@ -56,7 +56,7 @@ router.post(
     // 선발 여부 변경
     const updatePlayer = await prisma.usersPlayers.update({
       data: {
-        isStarting: true,
+        startingLine: true,
       },
       where: {
         userPlayerId: targetPlayer.userPlayerId,
