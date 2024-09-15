@@ -22,7 +22,7 @@ model users {
   cash Int @default(10000)
   rating Int @default(1000)
   createdDate DateTime @default(now()) @map("created_date")
-  updatedDate DateTime @updatedAt @map("updated_date")
+  updatedDate DateTime? @updatedAt @map("updated_date")
 
   usersPlayers usersPlayers[]
   gameResults1 gameResults[] @relation(name: "user1")
@@ -39,7 +39,7 @@ model players {
   defense Int
   stamina Int
   createdDate DateTime @default(now()) @map("created_date")
-  updatedDate DateTime @updatedAt @map("updated_date")
+  updatedDate DateTime? @updatedAt @map("updated_date")
 
   usersPlayers usersPlayers[]
 }
@@ -52,7 +52,7 @@ model usersPlayers {
   level Int
   startingLine Boolean @map("starting_line")
   createdDate DateTime @default(now()) @map("created_date")
-  updatedDate DateTime @updatedAt @map("updated_date")
+  updatedDate DateTime? @updatedAt @map("updated_date")
 
   user users @relation(fields: [userId], references: [id], onDelete: Cascade)
   player players @relation(fields: [playerId], references: [playerId], onDelete: Cascade)
@@ -68,7 +68,7 @@ model gameResults {
   user1Point Int @map("user1_point")
   user2Point Int @map("user2_point")
   createdDate DateTime @default(now()) @map("created_date")
-  updatedDate DateTime @updatedAt @map("updated_date")
+  updatedDate DateTime? @updatedAt @map("updated_date")
 
   user1 users @relation(name: "user1", fields: [user1Id], references: [id], onDelete: Cascade)
   user2 users @relation(name: "user2", fields: [user2Id], references: [id], onDelete: Cascade)
