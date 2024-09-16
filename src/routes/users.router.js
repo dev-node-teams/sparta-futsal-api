@@ -1,12 +1,20 @@
 import express from 'express';
 import { prisma } from '../utils/prisma/index.js';
 import authMiddleware from '../middlewares/auth.middleware.js';
+import joi from 'joi';
 
 const UsersRouter = express.Router();
 
 // 캐시 충전
 UsersRouter.post('/users/buy-cash', authMiddleware, async (req, res, next) => {
   const { buycash } = req.body;
+
+  const cashVal = joi.object({
+    buycash: joi.number().required().message({
+      'number.base': '충전해야 할 금액을 숫자형태로 적어주세요',
+      'any.required': '충전할 금액을 적어주세요',
+    }),
+  });
 
   try {
     // 충전할 캐시를 안적거나, 숫자 아닌 다른 것 넣은 경우

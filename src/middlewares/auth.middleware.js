@@ -2,14 +2,14 @@ import jwt from 'jsonwebtoken';
 import { prisma } from '../utils/prisma/index.js';
 
 export default async (req, res, next) => {
-  const { authorization } = req.cookies;
+  const authorization = req.headers.authorization;
 
   try {
     if (!authorization) {
       throw new Error('토큰 X');
     }
 
-    const [tokenType, token] = req.cookies.authorization.split(' ');
+    const [tokenType, token] = authorization.split(' ');
 
     if (tokenType !== 'Bearer' || !token) {
       throw new Error('토큰이 맞지 않음');
@@ -25,7 +25,6 @@ export default async (req, res, next) => {
     });
 
     if (!userEmail) {
-      res.clearCookie('authorization');
       throw new Error('토큰의 사용자가 존재 X');
     }
 
@@ -33,7 +32,6 @@ export default async (req, res, next) => {
 
     next();
   } catch (error) {
-    res.clearCookie('authorization');
     console.error(error);
     res.status(400).json({ message: error.message });
   }
