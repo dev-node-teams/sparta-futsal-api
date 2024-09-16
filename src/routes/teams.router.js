@@ -10,14 +10,14 @@ router.post(
   '/teams/starting',
   asyncHandler(async (req, res, next) => {
     const joiSchema = joi.object({
-      playerId: joi.number().required().messages({
+      userPlayerId: joi.number().required().messages({
         'number.base': '플레이어 아이디는 숫자타입이어야 합니다.',
         'any.required': '플레이어 아이디를 입력해주세요.',
       }),
     });
 
     const validation = await joiSchema.validateAsync(req.body);
-    const { playerId } = validation;
+    const { userPlayerId } = validation;
 
     const MAX_STARTING_COUNT = 3;
 
@@ -27,8 +27,7 @@ router.post(
     // 대상 선수 조회
     const targetPlayer = await prisma.usersPlayers.findFirst({
       where: {
-        playerId: playerId,
-        userId: userId,
+        userPlayerId,
       },
     });
 
@@ -51,6 +50,18 @@ router.post(
     // 기존 선발선수의 수가 ${MAX_STARTING_COUNT}명 이상일 경우 // 3
     if (startingPlayers.length >= MAX_STARTING_COUNT) {
       throw new Error('선발선수는 최대 ${MAX_STARTING_COUNT}명까지만 등록 가능합니다.');
+    }
+
+    // 선발 목록에 같은 선수가 있는 경우,
+    const samePlayer = await prisma.usersPlayers.findFirst({
+      where: {
+        userId: userId,
+        startingLine: true,
+        playerId: targetPlayer.playerId,
+      },
+    });
+    if (samePlayer) {
+      throw new Error('선발목록에 동일한 선수가 포함되어있습니다.');
     }
 
     // 선발 여부 변경
