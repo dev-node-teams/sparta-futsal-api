@@ -10,14 +10,14 @@ router.delete(
   '/teams/starting',
   asyncHandler(async (req, res, next) => {
     const joiSchema = joi.object({
-      playerId: joi.number().required().messages({
+      userPlayerId: joi.number().required().messages({
         'number.base': '플레이어 아이디는 숫자타입이어야 합니다.',
         'any.required': '플레이어 아이디를 입력해주세요.',
       }),
     });
 
     const validation = await joiSchema.validateAsync(req.body);
-    const { playerId } = validation;
+    const { userPlayerId } = validation;
 
     // @TODO: TEST코드 삭제예정
     const userId = 1;
@@ -25,7 +25,7 @@ router.delete(
     // 대상 선수 조회
     const targetPlayer = await prisma.usersPlayers.findFirst({
       where: {
-        playerId: playerId,
+        userPlayerId: userPlayerId,
         userId: userId,
       },
     });
