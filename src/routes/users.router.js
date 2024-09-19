@@ -9,41 +9,34 @@ const UsersRouter = express.Router();
 
 // 회원가입 API
 UsersRouter.post('/users/sign-up', async (req, res, next) => {
-  const { email, password, nickname } = req.body;
-
-  const userVal = joi.object({
-    email: joi
-      .string()
-      .pattern(/^[a-zA-Z0-9]{6,20}$/)
-      .required()
-      .message({
-        'string.pattern.base': '이메일은 6~20자의 영문, 숫자로 이루어져야 한다.',
-        'string.empty': '이메일은 반드시 작성해야 한다.',
-      }),
+  const userSchema = joi.object({
+    email: joi.string().email().required().messages({
+      'string.email': '이메일 형식으로 작성',
+      'any.required': '이메일은 반드시 작성해야 한다.',
+    }),
     password: joi
       .string()
       .pattern(/^[!@#$%^&*a-zA-Z0-9]{6,20}$/)
       .required()
-      .message({
-        'string.pattern.base': '패스워드는 6~20자의 영문, 숫자, 특수문자로 이루어져야 한다.',
-        'string.empty': '패스워드는 반드시 작성해야 한다.',
+      .messages({
+        'string.pattern.base': '패스워드는 영문, 숫자, 특수문자로 이루어져야 한다.',
+        'any.required': '패스워드는 반드시 작성해야 한다.',
       }),
     nickname: joi
       .string()
-      .pattern(/^[a-zA-Z0-9]{3,30}$/)
+      .pattern(/^[a-zA-Z0-9]{6,20}$/)
       .required()
-      .message({
-        'string.pattern.base': '닉네임은 3~30자의 영문, 숫자로 이루어져야 한다.',
-        'string.empty': '닉네임은 반드시 작성해야 한다.',
+      .messages({
+        'string.pattern.base': '닉네임은 영문, 숫자로 이루어져야 한다.',
+        'any.required': '닉네임은 반드시 작성해야 한다.',
       }),
   });
 
-  const error = userVal.validate(req.body);
-  if (error) {
-    return res.status(400).json({ message: '유효하지 않은 값' });
-  }
-
   try {
+    const userVal = await userSchema.validateAsync(req.body);
+
+    const { email, password, nickname } = userVal;
+
     // users 테이블에 있는 email인지 확인, email이 unique 속성이래서 findUnique
     const isExistEmail = await prisma.users.findUnique({
       where: {
@@ -85,37 +78,28 @@ UsersRouter.post('/users/sign-up', async (req, res, next) => {
   }
 });
 
-
-
 // 로그인 API
 UsersRouter.post('/users/sign-in', async (req, res, next) => {
-  const { email, password } = req.body;
-
-  const userVal = joi.object({
-    email: joi
-      .string()
-      .pattern(/^[a-zA-Z0-9]{6,20}$/)
-      .required()
-      .message({
-        'string.pattern.base': '이메일은 6~20자의 영문, 숫자로 이루어져야 한다.',
-        'string.empty': '이메일은 반드시 작성해야 한다.',
-      }),
+  const userSchema = joi.object({
+    email: joi.string().email().required().messages({
+      'string.pattern.base': '이메일은 6~20자의 영문, 숫자로 이루어져야 한다.',
+      'any.required': '이메일은 반드시 작성해야 한다.',
+    }),
     password: joi
       .string()
       .pattern(/^[!@#$%^&*a-zA-Z0-9]{6,20}$/)
       .required()
-      .message({
+      .messages({
         'string.pattern.base': '패스워드는 6~20자의 영문, 숫자, 특수문자로 이루어져야 한다.',
-        'string.empty': '패스워드는 반드시 작성해야 한다.',
+        'any.required': '패스워드는 반드시 작성해야 한다.',
       }),
   });
 
-  const error = userVal.validate(req.body);
-  if (error) {
-    return res.status(400).json({ message: '유효하지 않은 값' });
-  }
-
   try {
+    const userVal = await userSchema.validateAsync(req.body);
+
+    const { email, password } = userVal;
+
     const loginUser = await prisma.users.findUnique({
       where: {
         email,
@@ -152,9 +136,7 @@ UsersRouter.post('/users/sign-in', async (req, res, next) => {
 
 // 캐시 충전
 UsersRouter.post('/users/buy-cash', authMiddleware, async (req, res, next) => {
-  const { buycash } = req.body;
-
-  const cashVal = joi.object({
+  const cashSchema = joi.object({
     buycash: joi.number().required().message({
       'number.base': '충전해야 할 금액을 숫자형태로 적어주세요',
       'any.required': '충전할 금액을 적어주세요',
@@ -162,10 +144,8 @@ UsersRouter.post('/users/buy-cash', authMiddleware, async (req, res, next) => {
   });
 
   try {
-    // 충전할 캐시를 안적거나, 숫자 아닌 다른 것 넣은 경우
-    if (!buycash || typeof buycash !== 'number') {
-      return res.status(400).json('충전할 금액을 제대로 설정하세요');
-    }
+    const cashVal = await cashSchema.validateAsync(req.body);
+    const { buycash } = cashVal;
 
     // 인증을 통해 얻은 email 확인 후 cash 수정해야 할 user 확인
     const authEmail = req.email;
