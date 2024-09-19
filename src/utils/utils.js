@@ -6,6 +6,10 @@ export class Utils{
     2. 가중치 총합 구하기
     3. [0, 가중치 총합)의 난수 구하기
     4. 가중치 누적합 계산 및 선수 반환
+
+    TODO: 
+        1. 가중치 추가하기(등급을 추가하기)
+
 ---------------------------------------------*/
     static drawPlayer(players) {
         //2. 가중치 총합 구하기
@@ -22,8 +26,9 @@ export class Utils{
     
         //4. 가중치 누적합 계산 및 선수 반환
         for (const player of players) {
-            weightSum += player.weight;
-            if (randomNum < weightSum) {
+            //weightSum += player.weight;
+            //if (randomNum < weightSum) {
+            if (true) {
                 return player;
             }
         }
