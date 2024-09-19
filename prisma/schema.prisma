@@ -1,0 +1,77 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// 유저
+model users {
+  id Int @id @default(autoincrement()) 
+  email String @unique
+  password String 
+  nickname String @unique
+  cash Int @default(10000)
+  rating Int @default(1000)
+  createdDate DateTime @default(now()) @map("created_date")
+  updatedDate DateTime? @updatedAt @map("updated_date")
+
+  usersPlayers usersPlayers[]
+  gameResults1 gameResults[] @relation(name: "user1")
+  gameResults2 gameResults[] @relation(name: "user2")
+}
+
+// 선수 
+model players {
+  playerId Int @id @default(autoincrement()) 
+  playerName String @map("player_name")
+  speed Int
+  finishing Int
+  shotPower Int @map("shot_power")
+  defense Int
+  stamina Int
+  createdDate DateTime @default(now()) @map("created_date")
+  updatedDate DateTime? @updatedAt @map("updated_date")
+
+  usersPlayers usersPlayers[]
+}
+
+// 보유 선수 테이블 
+model usersPlayers {
+  userPlayerId Int @id @default(autoincrement()) @map("user_player_id")
+  userId Int @map("user_id")
+  playerId Int @map("player_id")
+  level Int
+  startingLine Boolean @map("starting_line")
+  createdDate DateTime @default(now()) @map("created_date")
+  updatedDate DateTime? @updatedAt @map("updated_date")
+
+  user users @relation(fields: [userId], references: [id], onDelete: Cascade)
+  player players @relation(fields: [playerId], references: [playerId], onDelete: Cascade)
+
+  @@map("users_players")
+}
+
+// 경기 이력 테이블 
+model gameResults {
+  game_results_id Int @id @default(autoincrement()) 
+  user1Id Int @map("user1_id")
+  user2Id Int @map("user2_id")
+  user1Point Int @map("user1_point")
+  user2Point Int @map("user2_point")
+  createdDate DateTime @default(now()) @map("created_date")
+  updatedDate DateTime? @updatedAt @map("updated_date")
+
+  user1 users @relation(name: "user1", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2 users @relation(name: "user2", fields: [user2Id], references: [id], onDelete: Cascade)
+
+  @@map("game_results")
+}
