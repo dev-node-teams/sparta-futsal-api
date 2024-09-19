@@ -1,5 +1,4 @@
 import jwt from 'jsonwebtoken';
-import { prisma } from '../utils/prisma/index.js';
 
 export default async (req, res, next) => {
   const authorization = req.headers.authorization;
@@ -16,19 +15,13 @@ export default async (req, res, next) => {
     }
 
     const decodedToken = jwt.verify(token, 'secret-key');
-    const decodedEmail = decodedToken.email;
+    const decodedId = decodedToken.id;
 
-    const userEmail = await prisma.users.findUnique({
-      where: {
-        email: decodedEmail,
-      },
-    });
-
-    if (!userEmail) {
+    if (!decodedId) {
       throw new Error('토큰의 사용자가 존재 X');
     }
 
-    req.email = decodedEmail;
+    req.userId = decodedId;
 
     next();
   } catch (error) {

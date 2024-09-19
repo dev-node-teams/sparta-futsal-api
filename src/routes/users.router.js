@@ -4,6 +4,9 @@ import authMiddleware from '../middlewares/auth.middleware.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import joi from 'joi';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const UsersRouter = express.Router();
 
@@ -119,7 +122,7 @@ UsersRouter.post('/users/sign-in', async (req, res, next) => {
 
     const token = jwt.sign(
       {
-        email: loginUser.email,
+        id: loginUser.id,
       },
       'secret-key',
       { expiresIn: '1h' },
@@ -137,7 +140,7 @@ UsersRouter.post('/users/sign-in', async (req, res, next) => {
 // 캐시 충전
 UsersRouter.post('/users/buy-cash', authMiddleware, async (req, res, next) => {
   const cashSchema = joi.object({
-    buycash: joi.number().required().message({
+    buycash: joi.number().required().messages({
       'number.base': '충전해야 할 금액을 숫자형태로 적어주세요',
       'any.required': '충전할 금액을 적어주세요',
     }),
@@ -148,13 +151,13 @@ UsersRouter.post('/users/buy-cash', authMiddleware, async (req, res, next) => {
     const { buycash } = cashVal;
 
     // 인증을 통해 얻은 email 확인 후 cash 수정해야 할 user 확인
-    const authEmail = req.email;
+    const authId = req.userId;
 
     const userCash = await prisma.users.findUnique({
       // SELECT cash FROM users
       // WHERE email = authEmail
       where: {
-        email: authEmail,
+        id: authId,
       },
       select: {
         cash: true,
@@ -170,7 +173,7 @@ UsersRouter.post('/users/buy-cash', authMiddleware, async (req, res, next) => {
       // SET cash = userCash.cash + buycash
       // WHERE email = authEmail
       where: {
-        email: authEmail,
+        id: authId,
       },
       data: {
         cash: userCash.cash + buycash,
