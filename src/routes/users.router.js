@@ -13,23 +13,33 @@ const UsersRouter = express.Router();
 // 회원가입 API
 UsersRouter.post('/users/sign-up', async (req, res, next) => {
   const userSchema = joi.object({
-    email: joi.string().email().required().messages({
+    email: joi.string().email().min(6).max(20).required().messages({
+      'string.min': '이메일은 최소 6자 이상이어야 합니다.',
+      'string.max': '이메일은 최대 20자까지 가능합니다.',
       'string.email': '이메일 형식으로 작성',
       'any.required': '이메일은 반드시 작성해야 한다.',
     }),
     password: joi
       .string()
-      .pattern(/^[!@#$%^&*a-zA-Z0-9]{6,20}$/)
+      .min(6)
+      .max(20)
+      .pattern(/^[!@#$%^&*a-zA-Z0-9]*$/)
       .required()
       .messages({
+        'string.min': '비밀번호는 최소 6자 이상이어야 합니다.',
+        'string.max': '비밀번호는 최대 20자까지 가능합니다.',
         'string.pattern.base': '패스워드는 영문, 숫자, 특수문자로 이루어져야 한다.',
         'any.required': '패스워드는 반드시 작성해야 한다.',
       }),
     nickname: joi
       .string()
-      .pattern(/^[a-zA-Z0-9]{6,20}$/)
+      .min(6)
+      .max(20)
+      .pattern(/^[a-zA-Z0-9]*$/)
       .required()
       .messages({
+        'string.min': '닉네임은 최소 6자 이상이어야 합니다.',
+        'string.max': '닉네임은 최대 20자까지 가능합니다.',
         'string.pattern.base': '닉네임은 영문, 숫자로 이루어져야 한다.',
         'any.required': '닉네임은 반드시 작성해야 한다.',
       }),
@@ -84,7 +94,7 @@ UsersRouter.post('/users/sign-up', async (req, res, next) => {
 // 로그인 API
 UsersRouter.post('/users/sign-in', async (req, res, next) => {
   const userSchema = joi.object({
-    email: joi.string().email().required().messages({
+    email: joi.string().email().min(6).max(20).required().messages({
       'string.pattern.base': '이메일은 6~20자의 영문, 숫자로 이루어져야 한다.',
       'any.required': '이메일은 반드시 작성해야 한다.',
     }),
