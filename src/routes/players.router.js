@@ -43,11 +43,12 @@ router.get('/players/:player_id', async(req, res) => {
 ---------------------------------------------*/
 router.post('/players/draw', authCheck, async(req, res) => {
     const cost = 100;
+    console.log("userID: ");
+    console.log(req.userId);
 
     try {
         //1.유저 cash정보 DB로부터 확인: DB누적 접근: 1
-        const user = await tx.users.findUnique({ 
-            
+        const user = await prisma.users.findUnique({ 
             where: { id: req.userId },
             select: {
                 id: true,
@@ -78,7 +79,7 @@ router.post('/players/draw', authCheck, async(req, res) => {
             });
     
             // 1-2 인벤에 선수 추가
-            await prisma.usersPlayers.create({ //DB 누적 접근: 3
+            await tx.usersPlayers.create({ //DB 누적 접근: 3
                 data: {
                     userId: user.id,
                     playerId: selectedPlayer.playerId,
