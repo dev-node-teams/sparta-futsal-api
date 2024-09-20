@@ -1,27 +1,21 @@
 import jwt from 'jsonwebtoken';
 
 export default async (req, res, next) => {
-  const authorization = req.headers.authorization;
+  const token = req.headers.authorization;
+  if (!token) {
+    throw new Error('토큰 X');
+  }
 
   try {
-    if (!authorization) {
-      throw new Error('토큰 X');
-    }
+    const [tokenType, tokenValue] = token.split(' ');
 
-    const [tokenType, token] = authorization.split(' ');
-
-    if (tokenType !== 'Bearer' || !token) {
+    if (tokenType !== 'Bearer' || !tokenValue) {
       throw new Error('토큰이 맞지 않음');
     }
 
-    const decodedToken = jwt.verify(token, 'secret-key');
-    const decodedId = decodedToken.id;
+    const decodedToken = jwt.verify(tokenValue, 'secret-key');
 
-    if (!decodedId) {
-      throw new Error('토큰의 사용자가 존재 X');
-    }
-
-    req.userId = decodedId;
+    req.userId = decodedToken.id;
 
     next();
   } catch (error) {
