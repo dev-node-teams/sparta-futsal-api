@@ -1,3 +1,6 @@
+import { prisma } from '../utils/prisma/index.js';
+import { Prisma } from '@prisma/client'
+
 export class Utils{
 /*---------------------------------------------
     [개요]
@@ -44,7 +47,6 @@ export class Utils{
     [레벨 별 능력치 부여]
 ---------------------------------------------*/
     static getAdjustLevelOVR(OVR, level){
-        console.log(OVR+" : "+level);
         switch(level){
             case 0: return OVR;
             case 1: return OVR+3;
@@ -58,7 +60,6 @@ export class Utils{
             case 9: return OVR+18;
             case 10: return OVR+22;
             default:
-                console.log("sl");
                 return null;
         }
     }
@@ -93,7 +94,53 @@ export class Utils{
         else
             return 0.035
     }
+/*---------------------------------------------
+    [강화 성공 확률 반환]
+---------------------------------------------*/
+    static async calcUpgradePercent(upgradePlayer, upgradeMaterials){
+        let arr = [];
+        for (const material of upgradeMaterials) {
+            arr.push(material.userPlayerId);
+        }
+        
 
+        //강화할 선수 OVR가져오기 
+        let upgradePlayerOVR = await prisma.$queryRaw`
+            SELECT user_player_id, player_name, level, FLOOR(SUM(speed + finishing + shot_power + defense + stamina)/5) as OVR
+            FROM players a  JOIN users_players b USING (playerId)
+            WHERE b.user_player_id = ${upgradePlayer.userPlayerId}
+            GROUP BY user_player_id;
+        `;
+        if(upgradePlayerOVR.length == 0){
+            throw new Error("유효하지 않은 upgradePlayerOVR");
+        }
+            
+        //레벨 보정
+        const adjustUpgradePlayerOVR = Utils.getAdjustLevelOVR(upgradePlayerOVR[0].OVR, upgradePlayerOVR[0].level)
+
+        // 강화 재료들의 OVR 가져오기 
+        const upgradeMaterialsOVR = await prisma.$queryRaw` 
+            SELECT user_player_id, level, player_name, FLOOR(SUM(speed + finishing + shot_power + defense + stamina)/5) as OVR
+            FROM players a 
+            JOIN users_players b 
+            USING (playerId)
+            WHERE b.user_player_id IN (${Prisma.join(arr)})
+            GROUP BY user_player_id;
+        `;
+        if(upgradeMaterialsOVR.length == 0){
+            throw new Error("유효하지 않은 upgradeMaterialsOVR");
+        }
+        console.log(upgradeMaterialsOVR);
+        let percent = 0;
+        //레벨 보정
+        for(let material of upgradeMaterialsOVR){
+            percent += Utils.getUpgradePercent(adjustUpgradePlayerOVR, Utils.getAdjustLevelOVR(material.OVR, material.level));
+            console.log(1);
+        }
+
+        percent = Utils.clamp(percent, 0, 1);
+        return percent;
+    }
 /*---------------------------------------------
     [clamp]
 ---------------------------------------------*/
