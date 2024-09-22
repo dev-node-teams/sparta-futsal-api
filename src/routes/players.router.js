@@ -1,5 +1,6 @@
 import express from 'express';
 import { prisma } from '../utils/prisma/index.js';
+import { Prisma } from '@prisma/client'
 import { Utils } from '../utils/utils.js';
 import authCheck from '../middlewares/auth.middleware.js';
 const router = express.Router();
@@ -39,7 +40,6 @@ router.get('/players/:player_id', async(req, res) => {
              비용 차감 (트랜잭션으로 처리)
              인벤에 넣기 (트랜잭션으로 처리)
     2. 뽑은 선수 반환 or status(400) 반환
-
 ---------------------------------------------*/
 router.post('/players/draw', authCheck, async(req, res) => {
     const cost = 100;
@@ -87,7 +87,7 @@ router.post('/players/draw', authCheck, async(req, res) => {
                 },
             });
             return res.status(200).json(selectedPlayer);
-        })
+        });
     } catch (err) {
         console.log(err);
         return res.status(400).json({
@@ -95,6 +95,65 @@ router.post('/players/draw', authCheck, async(req, res) => {
             throw: err.message
         }); 
     }
+});
+
+/*---------------------------------------------
+    [선수 강화]
+
+    동일한 OVR: 50%
+    OVR+1: 67%
+    OVR+2: 90%
+    OVR+3~: 100%
+    OVR-1: 37.3%
+    OVR-2: 27.5%
+    OVR-3: 20.8%
+    OVR-4: 15.2%
+    OVR-5: 11.3%
+    OVR-6: 8.4%
+    OVR-7: 6.2%
+    OVR-6: 4.6%
+    OVR-9~: 3.5%
+---------------------------------------------*/
+router.post('/players/upgrade', async(req, res) => {
+    const {upgradePlayer, upgradeMaterials} = req.body;
+
+    //강화할 선수를 재료들로 성공할 확률 구하기 - DB접근 2회
+    let upgradePercent = await Utils.calcUpgradePercent(upgradePlayer, upgradeMaterials);
+
+    const randomNum = Math.random();
+    console.log(upgradePercent);
+    if(randomNum <= upgradePercent){
+        console.log("성공")
+        const userPlayerIds = upgradeMaterials.map(material => material.userPlayerId);
+        const result = await prisma.$transaction(async (tx) =>{
+            // 1- 2 DB에 level 1추가
+            await tx.usersPlayers.update({
+                where: {userPlayerId: upgradePlayer.userPlayerId},
+                data: { level: { increment: 1 } }
+            });
+    
+            // 1-2 강화 재료 DB에서 제거 
+            await tx.usersPlayers.deleteMany({ 
+                where: {
+                    userPlayerId: {
+                        in: userPlayerIds
+                    },
+                },
+            });
+        });
+        const updatedPlayer = await prisma.usersPlayers.findUnique({ 
+            where: { userPlayerId: upgradePlayer.userPlayerId },
+            select: {
+                playerId: true,
+                level: true
+            }
+        });
+        console.log(upgradePercent);
+        return res.status(200).json({result: "성공", updatedPlayer});
+    }
+
+    return res.status(200).json({result: "실패"});
+    
 });
 
 export default router;
