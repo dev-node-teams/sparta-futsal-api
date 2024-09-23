@@ -122,8 +122,6 @@ UsersRouter.post('/users/sign-in', async (req, res, next) => {
       },
     });
 
-    console.log(loginUser);
-
     if (!loginUser) {
       throw new StatusError('존재하지 않는 이메일입니다.', StatusCodes.UNAUTHORIZED);
     }
@@ -139,14 +137,15 @@ UsersRouter.post('/users/sign-in', async (req, res, next) => {
       {
         id: loginUser.id,
       },
-      ACCESS_SECRET_KEY,
+      process.env.ACCESS_SECRET_KEY,
       { expiresIn: '1h' },
     );
+
     const refreshToken = jwt.sign(
       {
         id: loginUser.id,
       },
-      REFRESH_SECRET_KEY,
+      process.env.REFRESH_SECRET_KEY,
       { expiresIn: '7d' },
     );
 
@@ -173,13 +172,13 @@ UsersRouter.post('/users/refresh', async (req, res, next) => {
   }
 
   try {
-    const decodedRefresh = jwt.verify(refreshToken, REFRESH_SECRET_KEY);
+    const decodedRefresh = jwt.verify(refreshToken, process.env.REFRESH_SECRET_KEY);
 
     const newAccessToken = jwt.sign(
       {
         id: decodedRefresh.id,
       },
-      ACCESS_SECRET_KEY,
+      process.env.ACCESS_SECRET_KEY,
       { expiresIn: '1h' },
     );
 

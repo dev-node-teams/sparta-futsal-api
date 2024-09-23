@@ -13,7 +13,7 @@ export default async (req, res, next) => {
       throw new Error('토큰이 맞지 않음');
     }
 
-    const decodedToken = jwt.verify(tokenValue, 'secret-key');
+    const decodedToken = jwt.verify(tokenValue, process.env.ACCESS_SECRET_KEY);
     console.log(decodedToken);
 
     req.userId = decodedToken.id;
