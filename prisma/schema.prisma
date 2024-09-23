@@ -22,17 +22,18 @@ model users {
 }
 
 model players {
-  playerId      Int            @id @default(autoincrement())
-  playerName    String         @map("player_name")
-  speed         Int
-  finishing     Int
-  shotPower     Int            @map("shot_power")
-  defense       Int
-  stamina       Int
-  rarity        Int            @default(0) @db.TinyInt
-  createdDate   DateTime       @default(now()) @map("created_date")
-  updatedDate   DateTime?      @updatedAt @map("updated_date")
-  users_players usersPlayers[]
+  playerId         Int                @id @default(autoincrement())
+  playerName       String             @map("player_name")
+  speed            Int
+  finishing        Int
+  shotPower        Int                @map("shot_power")
+  defense          Int
+  stamina          Int
+  rarity           Int                @default(0) @db.TinyInt
+  createdDate      DateTime           @default(now()) @map("created_date")
+  updatedDate      DateTime?          @updatedAt @map("updated_date")
+  cardpack_players cardpack_players[]
+  users_players    usersPlayers[]
 }
 
 model usersPlayers {
@@ -65,4 +66,22 @@ model gameResults {
   @@index([user1Id], map: "game_results_user1_id_fkey")
   @@index([user2Id], map: "game_results_user2_id_fkey")
   @@map("game_results")
+}
+
+model cardpack {
+  cardpackId       Int                @id @default(autoincrement())
+  packName         String             @db.VarChar(30)
+  cost             Int
+  cardpack_players cardpack_players[]
+}
+
+model cardpack_players {
+  cardpackId Int
+  playerId   Int
+  rarity     Int?
+  cardpack   cardpack @relation(fields: [cardpackId], references: [cardpackId], onDelete: NoAction, onUpdate: NoAction, map: "cardpack_players_cardPackID")
+  players    players  @relation(fields: [playerId], references: [playerId], onDelete: NoAction, onUpdate: NoAction, map: "cardpack_players_playerID")
+
+  @@id([cardpackId, playerId])
+  @@index([playerId], map: "cardpack_players_playerID")
 }
