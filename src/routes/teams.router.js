@@ -2,12 +2,14 @@ import express from 'express';
 import joi from 'joi';
 import asyncHandler from 'express-async-handler';
 import { prisma } from '../utils/prisma/index.js';
+import authMiddleware from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
 
 /** 선발 등록 API */
 router.post(
   '/teams/starting',
+  authMiddleware,
   asyncHandler(async (req, res, next) => {
     const joiSchema = joi.object({
       userPlayerId: joi.number().required().messages({
@@ -22,12 +24,15 @@ router.post(
     const MAX_STARTING_COUNT = 3;
 
     //@todo: test UserId 지울 것
-    const userId = 1;
+    const userId = req.userId;
+
+    console.log(' userId ===>> ', userId);
 
     // 대상 선수 조회
     const targetPlayer = await prisma.usersPlayers.findFirst({
       where: {
         userPlayerId,
+        userId,
       },
     });
 
@@ -88,10 +93,10 @@ router.post(
   }),
 );
 
-
 /** 선발 해제 API */
 router.delete(
   '/teams/starting',
+  authMiddleware,
   asyncHandler(async (req, res, next) => {
     const joiSchema = joi.object({
       userPlayerId: joi.number().required().messages({
@@ -104,7 +109,7 @@ router.delete(
     const { userPlayerId } = validation;
 
     // @TODO: TEST코드 삭제예정
-    const userId = 1;
+    const userId = req.userId;
 
     // 대상 선수 조회
     const targetPlayer = await prisma.usersPlayers.findFirst({
