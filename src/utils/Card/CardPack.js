@@ -1,6 +1,7 @@
 export class CardPack{
-    constructor(cardPool){
+    constructor(cardPool, cost){
         this.cardPool = cardPool;
+        this.cost = cost;
     }
     drawPlayer() {
         //2. 가중치 총합 구하기
@@ -24,5 +25,8 @@ export class CardPack{
         }
 
         return null
+    }
+    getCost(){
+        return this.cost;
     }
 };

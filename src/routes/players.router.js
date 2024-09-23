@@ -43,7 +43,7 @@ router.get('/players/:player_id', async(req, res) => {
     2. 뽑은 선수 반환 or status(400) 반환
 ---------------------------------------------*/
 router.post('/players/draw', authCheck, async(req, res) => {
-    const packName = req.body
+    const {packName} = req.body
 
     const cost = cardManager.getCost(packName);
 
