@@ -3,6 +3,7 @@ import { prisma } from '../utils/prisma/index.js';
 import { Prisma } from '@prisma/client'
 import { Utils } from '../utils/utils.js';
 import authCheck from '../middlewares/auth.middleware.js';
+import { cardManager } from '../utils/Card/CardManager.js';
 const router = express.Router();
 
 /*---------------------------------------------
@@ -42,9 +43,9 @@ router.get('/players/:player_id', async(req, res) => {
     2. 뽑은 선수 반환 or status(400) 반환
 ---------------------------------------------*/
 router.post('/players/draw', authCheck, async(req, res) => {
-    const cost = 100;
-    console.log("userID: ");
-    console.log(req.userId);
+    const packName = req.body
+
+    const cost = cardManager.getCost(packName);
 
     try {
         //1.유저 cash정보 DB로부터 확인: DB누적 접근: 1
@@ -68,18 +69,30 @@ router.post('/players/draw', authCheck, async(req, res) => {
         }
 
         //1-2 무작위 선수 뽑기
-        const players = await prisma.players.findMany(); //DB 누적 접근: 2
-        const selectedPlayer = Utils.drawPlayer(players); 
+        const selectedPlayerID = cardManager.drawCard(packName);
+        const selectedPlayer = await prisma.players.findUnique({ 
+            where: { playerId: selectedPlayerID.playerId },
+            select: {
+                playerId: true,
+                playerName: true,
+                speed: true,
+                finishing: true,
+                shotPower: true,
+                defense: true,
+                stamina: true
+            }
+        });
+
 
         const result = await prisma.$transaction(async (tx) =>{
             //1-2. 충분하다면, 비용차감
-            await tx.users.update({
+            await tx.users.update({ //DB 누적 접근: 3
                 where: {id: user.id},
                 data: { cash: user.cash-cost }
             });
     
             // 1-2 인벤에 선수 추가
-            await tx.usersPlayers.create({ //DB 누적 접근: 3
+            await tx.usersPlayers.create({ //DB 누적 접근: 4
                 data: {
                     userId: user.id,
                     playerId: selectedPlayer.playerId,
