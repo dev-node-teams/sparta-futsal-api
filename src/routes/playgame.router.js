@@ -10,8 +10,8 @@ router.post('/game/:opponent', async (req, res) => {
     // 상대 유저의 정보와 팀 데이터를 가져옵니다.
     try {
         const { opponent } = req.params; // 상대 정보
-        //const userId = req.user.id; // 로그인한 유저 ID
-        const userId = 1; // TEST용 userID 지울 것 사용 후 파기
+        const userId = req.user.id; // 로그인한 유저 ID
+        //const userId = 1; // TEST용 userID 지울 것 사용 후 파기
 
         // 로그인한 유저의 선발 선수 정보 가져오기
         const aUserPlayers = await prisma.usersPlayers.findMany({
@@ -72,8 +72,8 @@ router.post('/game/:opponent', async (req, res) => {
 // 점수 기반 자동 매치 메이킹 API
 router.post('/matchmaking', async (req, res) => {
     try {
-        // const userId = req.user.id; // 실제로는 로그인한 유저의 ID를 사용해야 함
-        const userId = 1; // 테스트용 userId, 추후 삭제
+        const userId = req.user.id; // 실제로는 로그인한 유저의 ID를 사용해야 함
+        //const userId = 1; // 테스트용 userId, 추후 삭제
 
         // 현재 유저의 점수 가져오기
         const currentUser = await prisma.users.findUnique({
