@@ -4,7 +4,7 @@ import teamsRouter from './routes/teams.router.js';
 import usersRouter from './routes/users.router.js';
 import playerRouter from './routes/players.router.js';
 import cookieParser from 'cookie-parser';
-import playgameRouter from './routes/playgame.router.js'
+import playgameRouter from './routes/playgame.router.js';
 
 // .env => process.env
 dotenv.config();
