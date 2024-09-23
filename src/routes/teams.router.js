@@ -4,6 +4,7 @@ import asyncHandler from 'express-async-handler';
 import { prisma } from '../utils/prisma/index.js';
 import authMiddleware from '../middlewares/auth.middleware.js';
 import StatusError from '../errors/status.error.js';
+import { StatusCodes } from 'http-status-codes';
 
 const router = express.Router();
 
@@ -40,11 +41,11 @@ router.post(
     console.log('==============>>>>111^^^11111  ', targetPlayer);
     if (!targetPlayer) {
       // 대상 선수가 없는 경우,
-      throw new StatusError('해당 선수 조회에 실패하였습니다.', 400);
+      throw new StatusError('해당 선수 조회에 실패하였습니다.', StatusCodes.BAD_REQUEST);
     } else if (targetPlayer.startingLine) {
       console.log('asdasdasd????');
       // 이미 선발인 경우,
-      throw new StatusError('이미 선발선수로 등록되어있습니다.', 400);
+      throw new StatusError('이미 선발선수로 등록되어있습니다.', StatusCodes.CONFLICT);
     }
     console.log('==============>>>>111^^^');
 
