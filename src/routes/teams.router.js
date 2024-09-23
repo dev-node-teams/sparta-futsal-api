@@ -3,6 +3,7 @@ import joi from 'joi';
 import asyncHandler from 'express-async-handler';
 import { prisma } from '../utils/prisma/index.js';
 import authMiddleware from '../middlewares/auth.middleware.js';
+import StatusError from '../errors/status.error.js';
 
 const router = express.Router();
 
@@ -36,13 +37,16 @@ router.post(
       },
     });
 
+    console.log('==============>>>>111^^^11111  ', targetPlayer);
     if (!targetPlayer) {
       // 대상 선수가 없는 경우,
-      throw new Error('해당 선수 조회에 실패하였습니다.');
+      throw new StatusError('해당 선수 조회에 실패하였습니다.', 400);
     } else if (targetPlayer.startingLine) {
+      console.log('asdasdasd????');
       // 이미 선발인 경우,
-      throw new Error('이미 선발선수로 등록되어있습니다.');
+      throw new StatusError('이미 선발선수로 등록되어있습니다.', 400);
     }
+    console.log('==============>>>>111^^^');
 
     const startingPlayers = await prisma.usersPlayers.findMany({
       select: { playerId: true },
@@ -51,6 +55,8 @@ router.post(
         startingLine: true,
       },
     });
+
+    console.log('==============>>>>333');
 
     // 기존 선발선수의 수가 ${MAX_STARTING_COUNT}명 이상일 경우 // 3
     if (startingPlayers.length >= MAX_STARTING_COUNT) {
@@ -65,9 +71,14 @@ router.post(
         playerId: targetPlayer.playerId,
       },
     });
+
+    console.log('==============>>>>222');
+
     if (samePlayer) {
       throw new Error('선발목록에 동일한 선수가 포함되어있습니다.');
     }
+
+    console.log('==============>>>>111');
 
     // 선발 여부 변경
     const updatePlayer = await prisma.usersPlayers.update({
@@ -81,14 +92,16 @@ router.post(
         user: {
           select: { nickname: true },
         },
-        player: {
+        players: {
           select: { playerName: true },
         },
       },
     });
 
+    console.log('==============>>>>');
+
     return res.status(201).json({
-      messages: `[${updatePlayer.user.nickname}]의 [${updatePlayer.player.playerName}] 선수를 선발선수로 등록하였습니다.`,
+      messages: `[${updatePlayer.user.nickname}]의 [${updatePlayer.players.playerName}] 선수를 선발선수로 등록하였습니다.`,
     });
   }),
 );
@@ -121,10 +134,10 @@ router.delete(
 
     if (!targetPlayer) {
       // 대상 선수가 없는 경우,
-      throw new Error('해당 선수 조회에 실패하였습니다.');
+      throw new StatusError('해당 선수 조회에 실패하였습니다.', 400);
     } else if (!targetPlayer.startingLine) {
       // 이미 선발이 아닌 경우,
-      throw new Error('해당 선수는 선발선수가 아닙니다.');
+      throw new StatusError('해당 선수는 선발선수가 아닙니다.', 400);
     }
 
     // 선발 여부 변경
@@ -139,14 +152,14 @@ router.delete(
         user: {
           select: { nickname: true },
         },
-        player: {
+        players: {
           select: { playerName: true },
         },
       },
     });
 
     return res.status(200).json({
-      messages: `[${updatePlayer.user.nickname}]의 [${updatePlayer.player.playerName}] 선수를 선발에서 해제하였습니다.`,
+      messages: `[${updatePlayer.user.nickname}]의 [${updatePlayer.players.playerName}] 선수를 선발에서 해제하였습니다.`,
     });
   }),
 );
