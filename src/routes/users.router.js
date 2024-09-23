@@ -4,46 +4,52 @@ import authMiddleware from '../middlewares/auth.middleware.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import joi from 'joi';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const UsersRouter = express.Router();
 
 // 회원가입 API
 UsersRouter.post('/users/sign-up', async (req, res, next) => {
-  const { email, password, nickname } = req.body;
-
-  const userVal = joi.object({
-    email: joi
-      .string()
-      .pattern(/^[a-zA-Z0-9]{6,20}$/)
-      .required()
-      .message({
-        'string.pattern.base': '이메일은 6~20자의 영문, 숫자로 이루어져야 한다.',
-        'string.empty': '이메일은 반드시 작성해야 한다.',
-      }),
+  const userSchema = joi.object({
+    email: joi.string().email().min(6).max(20).required().messages({
+      'string.min': '이메일은 최소 6자 이상이어야 한다.',
+      'string.max': '이메일은 최대 20자 이하여야 한다.',
+      'string.email': '이메일 형식으로 작성',
+      'any.required': '이메일은 반드시 작성해야 한다.',
+    }),
     password: joi
       .string()
-      .pattern(/^[!@#$%^&*a-zA-Z0-9]{6,20}$/)
+      .min(6)
+      .max(20)
+      .pattern(/^[!@#$%^&*a-zA-Z0-9]*$/)
       .required()
-      .message({
-        'string.pattern.base': '패스워드는 6~20자의 영문, 숫자, 특수문자로 이루어져야 한다.',
-        'string.empty': '패스워드는 반드시 작성해야 한다.',
+      .messages({
+        'string.min': '비밀번호는 최소 6자 이상이어야 한다.',
+        'string.max': '비밀번호는 최대 20자 이하여야 한다.',
+        'string.pattern.base': '패스워드는 영문, 숫자, 특수문자로 이루어져야 한다.',
+        'any.required': '패스워드는 반드시 작성해야 한다.',
       }),
     nickname: joi
       .string()
-      .pattern(/^[a-zA-Z0-9]{3,30}$/)
+      .min(6)
+      .max(20)
+      .pattern(/^[a-zA-Z0-9]*$/)
       .required()
-      .message({
-        'string.pattern.base': '닉네임은 3~30자의 영문, 숫자로 이루어져야 한다.',
-        'string.empty': '닉네임은 반드시 작성해야 한다.',
+      .messages({
+        'string.min': '닉네임은 최소 6자 이상이어야 한다.',
+        'string.max': '닉네임은 최대 20자 이하여야 한다.',
+        'string.pattern.base': '닉네임은 영문, 숫자로 이루어져야 한다.',
+        'any.required': '닉네임은 반드시 작성해야 한다.',
       }),
   });
 
-  const error = userVal.validate(req.body);
-  if (error) {
-    return res.status(400).json({ message: '유효하지 않은 값' });
-  }
-
   try {
+    const userVal = await userSchema.validateAsync(req.body);
+
+    const { email, password, nickname } = userVal;
+
     // users 테이블에 있는 email인지 확인, email이 unique 속성이래서 findUnique
     const isExistEmail = await prisma.users.findUnique({
       where: {
@@ -85,42 +91,40 @@ UsersRouter.post('/users/sign-up', async (req, res, next) => {
   }
 });
 
-
-
 // 로그인 API
 UsersRouter.post('/users/sign-in', async (req, res, next) => {
-  const { email, password } = req.body;
-
-  const userVal = joi.object({
-    email: joi
-      .string()
-      .pattern(/^[a-zA-Z0-9]{6,20}$/)
-      .required()
-      .message({
-        'string.pattern.base': '이메일은 6~20자의 영문, 숫자로 이루어져야 한다.',
-        'string.empty': '이메일은 반드시 작성해야 한다.',
-      }),
+  const userSchema = joi.object({
+    email: joi.string().email().min(6).max(20).required().messages({
+      'string.min': '이메일은 최소 6자 이상이어야 한다.',
+      'string.max': '이메일은 최대 20자 이하여야 한다.',
+      'any.required': '이메일은 반드시 작성해야 한다.',
+    }),
     password: joi
       .string()
-      .pattern(/^[!@#$%^&*a-zA-Z0-9]{6,20}$/)
+      .min(6)
+      .max(20)
+      .pattern(/^[!@#$%^&*a-zA-Z0-9]*$/)
       .required()
-      .message({
-        'string.pattern.base': '패스워드는 6~20자의 영문, 숫자, 특수문자로 이루어져야 한다.',
-        'string.empty': '패스워드는 반드시 작성해야 한다.',
+      .messages({
+        'string.min': '비밀번호는 최소 6자 이상이어야 합니다.',
+        'string.max': '비밀번호는 최대 20자까지 가능합니다.',
+        'string.pattern.base': '패스워드는 영문, 숫자, 특수문자로 이루어져야 한다.',
+        'any.required': '패스워드는 반드시 작성해야 한다.',
       }),
   });
 
-  const error = userVal.validate(req.body);
-  if (error) {
-    return res.status(400).json({ message: '유효하지 않은 값' });
-  }
-
   try {
+    const userVal = await userSchema.validateAsync(req.body);
+
+    const { email, password } = userVal;
+
     const loginUser = await prisma.users.findUnique({
       where: {
         email,
       },
     });
+
+    console.log(loginUser);
 
     if (!loginUser) {
       return res.status(404).json({ message: '존재하지 않는 이메일' });
@@ -133,15 +137,31 @@ UsersRouter.post('/users/sign-in', async (req, res, next) => {
       return res.status(400).json({ message: '비밀번호가 일치x' });
     }
 
-    const token = jwt.sign(
+    // Access Token, Refresh Token 생성
+    const accessToken = jwt.sign(
       {
-        email: loginUser.email,
+        id: loginUser.id,
       },
       'secret-key',
       { expiresIn: '1h' },
     );
+    const refreshToken = jwt.sign(
+      {
+        id: loginUser.id,
+      },
+      'refresh-secret',
+      { expiresIn: '7d' },
+    );
 
-    res.setHeader('Authorization', `Bearer ${token}`);
+    // Access Token은 header에
+    res.setHeader('Authorization', `Bearer ${accessToken}`);
+
+    // Refresh Token은 쿠키에 저장
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
 
     return res.status(200).json({ message: '로그인 성공' });
   } catch (error) {
@@ -150,31 +170,55 @@ UsersRouter.post('/users/sign-in', async (req, res, next) => {
   }
 });
 
+// Refresh Token으로 Access Token 새로 받아오기
+UsersRouter.post('/users/refresh', async (req, res, next) => {
+  const refreshToken = req.cookies.refreshToken;
+
+  if (!refreshToken) {
+    return res.status(404).json('refreshToken이 없음');
+  }
+
+  try {
+    const decodedRefresh = jwt.verify(refreshToken, 'refresh-secret');
+
+    const newAccessToken = jwt.sign(
+      {
+        id: decodedRefresh.id,
+      },
+      'secret-key',
+      { expiresIn: '1h' },
+    );
+
+    res.setHeader('Authorization', `Bearer ${newAccessToken}`);
+
+    return res.status(200).json({ message: 'Access Token 재발급' });
+  } catch (error) {
+    console.error(error);
+    return res.status(403).json({ message: '리프레시 토큰이 유효하지 않거나 만료되었습니다.' });
+  }
+});
+
 // 캐시 충전
 UsersRouter.post('/users/buy-cash', authMiddleware, async (req, res, next) => {
-  const { buycash } = req.body;
-
-  const cashVal = joi.object({
-    buycash: joi.number().required().message({
+  const cashSchema = joi.object({
+    buycash: joi.number().required().messages({
       'number.base': '충전해야 할 금액을 숫자형태로 적어주세요',
       'any.required': '충전할 금액을 적어주세요',
     }),
   });
 
   try {
-    // 충전할 캐시를 안적거나, 숫자 아닌 다른 것 넣은 경우
-    if (!buycash || typeof buycash !== 'number') {
-      return res.status(400).json('충전할 금액을 제대로 설정하세요');
-    }
+    const cashVal = await cashSchema.validateAsync(req.body);
+    const { buycash } = cashVal;
 
     // 인증을 통해 얻은 email 확인 후 cash 수정해야 할 user 확인
-    const authEmail = req.email;
+    const authId = req.userId;
 
     const userCash = await prisma.users.findUnique({
       // SELECT cash FROM users
       // WHERE email = authEmail
       where: {
-        email: authEmail,
+        id: authId,
       },
       select: {
         cash: true,
@@ -190,7 +234,7 @@ UsersRouter.post('/users/buy-cash', authMiddleware, async (req, res, next) => {
       // SET cash = userCash.cash + buycash
       // WHERE email = authEmail
       where: {
-        email: authEmail,
+        id: authId,
       },
       data: {
         cash: userCash.cash + buycash,
