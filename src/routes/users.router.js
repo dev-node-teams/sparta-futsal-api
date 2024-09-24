@@ -5,6 +5,8 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import joi from 'joi';
 import dotenv from 'dotenv';
+import StatusError from '../errors/status.error.js';
+import { StatusCodes } from 'http-status-codes';
 
 dotenv.config();
 
@@ -28,19 +30,19 @@ UsersRouter.post('/users/sign-up', async (req, res, next) => {
       .messages({
         'string.min': '비밀번호는 최소 6자 이상이어야 한다.',
         'string.max': '비밀번호는 최대 20자 이하여야 한다.',
-        'string.pattern.base': '패스워드는 영문, 숫자, 특수문자로 이루어져야 한다.',
+        'string.pattern.base': '패스워드는 영문, 숫자, 특수문자 중 한 가지 이상 포함되어야 한다.',
         'any.required': '패스워드는 반드시 작성해야 한다.',
       }),
     nickname: joi
       .string()
-      .min(6)
-      .max(20)
-      .pattern(/^[a-zA-Z0-9]*$/)
+      .min(2)
+      .max(15)
+      .pattern(/^[a-zA-Z0-9가-힣]*$/)
       .required()
       .messages({
-        'string.min': '닉네임은 최소 6자 이상이어야 한다.',
-        'string.max': '닉네임은 최대 20자 이하여야 한다.',
-        'string.pattern.base': '닉네임은 영문, 숫자로 이루어져야 한다.',
+        'string.min': '닉네임은 최소 2자 이상이어야 한다.',
+        'string.max': '닉네임은 최대 15자 이하여야 한다.',
+        'string.pattern.base': '닉네임은 한글, 영문, 숫자 중 한 가지 이상 포함되어야 한다.',
         'any.required': '닉네임은 반드시 작성해야 한다.',
       }),
   });
@@ -50,7 +52,6 @@ UsersRouter.post('/users/sign-up', async (req, res, next) => {
 
     const { email, password, nickname } = userVal;
 
-    // users 테이블에 있는 email인지 확인, email이 unique 속성이래서 findUnique
     const isExistEmail = await prisma.users.findUnique({
       where: {
         email,
@@ -58,9 +59,8 @@ UsersRouter.post('/users/sign-up', async (req, res, next) => {
     });
 
     if (isExistEmail) {
-      return res.status(400).json({ message: '이미 존재하는 이메일입니다.' });
+      throw new StatusError('이미 존재하는 이메일입니다.', StatusCodes.CONFLICT);
     }
-    // users 테이블에 있는 nickname인지 확인, nickname이 unique 속성이래서 findUnique
     const isExistNick = await prisma.users.findUnique({
       where: {
         nickname,
@@ -68,10 +68,9 @@ UsersRouter.post('/users/sign-up', async (req, res, next) => {
     });
 
     if (isExistNick) {
-      return res.status(400).json({ message: '이미 존재하는 닉네임입니다.' });
+      throw new StatusError('이미 존재하는 닉네임입니다.', StatusCodes.CONFLICT);
     }
 
-    // password 해싱, users 테이블에 email, 해싱된 password, nickname 추가
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const createUser = await prisma.users.create({
@@ -82,12 +81,11 @@ UsersRouter.post('/users/sign-up', async (req, res, next) => {
       },
     });
 
-    return res.status(201).json({
+    return res.status(StatusCodes.CREATED).json({
       message: `이메일: ${createUser.email}, 닉네임: ${createUser.nickname} 회원가입 완료`,
     });
   } catch (error) {
-    console.error(error);
-    return res.status(400).json({ message: error.message });
+    return next(error);
   }
 });
 
@@ -108,7 +106,7 @@ UsersRouter.post('/users/sign-in', async (req, res, next) => {
       .messages({
         'string.min': '비밀번호는 최소 6자 이상이어야 합니다.',
         'string.max': '비밀번호는 최대 20자까지 가능합니다.',
-        'string.pattern.base': '패스워드는 영문, 숫자, 특수문자로 이루어져야 한다.',
+        'string.pattern.base': '패스워드는 영문, 숫자, 특수문자 중 한 가지 이상 포함되어야 한다.',
         'any.required': '패스워드는 반드시 작성해야 한다.',
       }),
   });
@@ -124,49 +122,44 @@ UsersRouter.post('/users/sign-in', async (req, res, next) => {
       },
     });
 
-    console.log(loginUser);
-
     if (!loginUser) {
-      return res.status(404).json({ message: '존재하지 않는 이메일' });
+      throw new StatusError('존재하지 않는 이메일입니다.', StatusCodes.UNAUTHORIZED);
     }
 
     const hashedPassword = loginUser.password;
     const match = await bcrypt.compare(password, hashedPassword);
 
     if (!match) {
-      return res.status(400).json({ message: '비밀번호가 일치x' });
+      throw new StatusError('비밀번호가 일치하지 않습니다.', StatusCodes.UNAUTHORIZED);
     }
 
-    // Access Token, Refresh Token 생성
     const accessToken = jwt.sign(
       {
         id: loginUser.id,
       },
-      'secret-key',
+      process.env.ACCESS_SECRET_KEY,
       { expiresIn: '1h' },
     );
+
     const refreshToken = jwt.sign(
       {
         id: loginUser.id,
       },
-      'refresh-secret',
+      process.env.REFRESH_SECRET_KEY,
       { expiresIn: '7d' },
     );
 
-    // Access Token은 header에
     res.setHeader('Authorization', `Bearer ${accessToken}`);
 
-    // Refresh Token은 쿠키에 저장
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    return res.status(200).json({ message: '로그인 성공' });
+    return res.status(StatusCodes.OK).json({ message: '로그인 성공' });
   } catch (error) {
-    console.error(error);
-    return res.status(400).json({ message: error.message });
+    return next(error);
   }
 });
 
@@ -175,26 +168,25 @@ UsersRouter.post('/users/refresh', async (req, res, next) => {
   const refreshToken = req.cookies.refreshToken;
 
   if (!refreshToken) {
-    return res.status(404).json('refreshToken이 없음');
+    throw new StatusError('리프레시 토큰이 존재하지 않습니다.', StatusCodes.NOT_FOUND);
   }
 
   try {
-    const decodedRefresh = jwt.verify(refreshToken, 'refresh-secret');
+    const decodedRefresh = jwt.verify(refreshToken, process.env.REFRESH_SECRET_KEY);
 
     const newAccessToken = jwt.sign(
       {
         id: decodedRefresh.id,
       },
-      'secret-key',
+      process.env.ACCESS_SECRET_KEY,
       { expiresIn: '1h' },
     );
 
     res.setHeader('Authorization', `Bearer ${newAccessToken}`);
 
-    return res.status(200).json({ message: 'Access Token 재발급' });
+    return res.status(StatusCodes.CREATED).json({ message: 'Access Token 재발급' });
   } catch (error) {
-    console.error(error);
-    return res.status(403).json({ message: '리프레시 토큰이 유효하지 않거나 만료되었습니다.' });
+    return next(error);
   }
 });
 
@@ -211,12 +203,13 @@ UsersRouter.post('/users/buy-cash', authMiddleware, async (req, res, next) => {
     const cashVal = await cashSchema.validateAsync(req.body);
     const { buycash } = cashVal;
 
-    // 인증을 통해 얻은 email 확인 후 cash 수정해야 할 user 확인
     const authId = req.userId;
 
+    if (!authId) {
+      throw new StatusError('인증되지 않은 유저입니다.', StatusCodes.UNAUTHORIZED);
+    }
+
     const userCash = await prisma.users.findUnique({
-      // SELECT cash FROM users
-      // WHERE email = authEmail
       where: {
         id: authId,
       },
@@ -226,13 +219,10 @@ UsersRouter.post('/users/buy-cash', authMiddleware, async (req, res, next) => {
     });
 
     if (!userCash) {
-      return res.status(404).json('존재하지 않는 유저');
+      throw new StatusError('찾을 수 없는 유저입니다.', StatusCodes.NOT_FOUND);
     }
 
     const updateCash = await prisma.users.update({
-      // UPDATE users
-      // SET cash = userCash.cash + buycash
-      // WHERE email = authEmail
       where: {
         id: authId,
       },
@@ -242,11 +232,10 @@ UsersRouter.post('/users/buy-cash', authMiddleware, async (req, res, next) => {
     });
 
     return res
-      .status(200)
+      .status(StatusCodes.OK)
       .json({ message: `${buycash}만큼 충전해 현재 잔액 ${updateCash.cash}이다.` });
   } catch (error) {
-    console.error(error);
-    return res.status(400).json({ message: error.message });
+    throw next(error);
   }
 });
 

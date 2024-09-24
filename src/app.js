@@ -14,10 +14,9 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json());
+app.use(cookieParser());
 
 app.use('/api', [usersRouter, teamsRouter, playerRouter, playgameRouter]);
-
-app.use(cookieParser());
 
 app.use(errorMiddleware);
 
