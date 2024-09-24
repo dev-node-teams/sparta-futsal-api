@@ -1,10 +1,11 @@
 import express from 'express';
 import { prisma } from '../utils/prisma/index.js';
-import { Prisma } from '@prisma/client'
 import { Utils } from '../utils/utils.js';
 import authCheck from '../middlewares/auth.middleware.js';
 import { cardManager } from '../utils/Card/CardManager.js';
 import { StatusCodes } from 'http-status-codes';
+import StatusError from '../errors/status.error.js';
+
 const router = express.Router();
 
 /*---------------------------------------------
@@ -28,7 +29,7 @@ router.get('/players/:player_id', async(req, res) => {
       });
 
       if(!player){
-        return res.status(409).send("유효하지 않은 선수입니다.")
+        throw new StatusError('유효하지 않은 선수입니다.', StatusCodes.CONFLICT);
       }
     return res.status(200).json(player);
 });
