@@ -17,9 +17,6 @@ class CardManager{
                         playerId: true,
                         rarity: true
                     },
-                    where: {
-                        rarity: 10
-                    }
                 }
             }
         });

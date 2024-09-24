@@ -11,27 +11,32 @@ const router = express.Router();
 /*---------------------------------------------
                 선수 상세 조회
 ---------------------------------------------*/
-router.get('/players/:player_id', async(req, res) => {
+router.get('/players/:player_id', async(req, res, next) => {
     const playerId = Number(req.params.player_id);
     
-    const player = await prisma.players.findUnique({
-        where: {
-            playerId,
-        },
-        select: {
-            playerName: true,
-            speed: true,
-            finishing: true,
-            shotPower: true,
-            defense: true,
-            stamina: true
-        },
-      });
+    try {
+        const player = await prisma.players.findUnique({
+            where: {
+                playerId,
+            },
+            select: {
+                playerName: true,
+                speed: true,
+                finishing: true,
+                shotPower: true,
+                defense: true,
+                stamina: true
+            },
+          });
+    
+          if(!player){
+            throw new StatusError('존재하지 않는 선수입니다.', StatusCodes.CONFLICT);
+        }
 
-      if(!player){
-        throw new StatusError('유효하지 않은 선수입니다.', StatusCodes.CONFLICT);
-      }
-    return res.status(200).json(player);
+        return res.status(200).json(player);
+    } catch (error) {
+        return next(error);
+    }
 });
 
 /*---------------------------------------------
@@ -44,14 +49,14 @@ router.get('/players/:player_id', async(req, res) => {
              인벤에 넣기 (트랜잭션으로 처리)
     2. 뽑은 선수 반환 or status(400) 반환
 ---------------------------------------------*/
-router.post('/players/draw', authCheck, async(req, res) => {
+router.post('/players/draw', authCheck, async(req, res, next) => {
     const {packName} = req.body
 
-    const cost = cardManager.getCost(packName);
-
     try {
+        const cost = cardManager.getCost(packName);
         //1.유저 cash정보 DB로부터 확인: DB누적 접근: 1
         const user = await prisma.users.findUnique({ 
+            //where: { id: 1 },
             where: { id: req.userId },
             select: {
                 id: true,
@@ -70,6 +75,7 @@ router.post('/players/draw', authCheck, async(req, res) => {
 
         //1-2 무작위 선수 뽑기
         const selectedPlayerID = cardManager.drawCard(packName);
+        console.log("dd", selectedPlayerID)
         const selectedPlayer = await prisma.players.findUnique({ 
             where: { playerId: selectedPlayerID.playerId },
             select: {
@@ -82,7 +88,7 @@ router.post('/players/draw', authCheck, async(req, res) => {
                 stamina: true
             }
         });
-
+        console.log(selectedPlayer)
 
         const result = await prisma.$transaction(async (tx) =>{
             //1-2. 충분하다면, 비용차감
@@ -92,7 +98,7 @@ router.post('/players/draw', authCheck, async(req, res) => {
             });
     
             // 1-2 인벤에 선수 추가
-            await tx.usersPlayers.create({ //DB 누적 접근: 4
+            await tx.usersPlayers.create({ // DB 누적 접근: 4
                 data: {
                     userId: user.id,
                     playerId: selectedPlayer.playerId,
@@ -103,7 +109,7 @@ router.post('/players/draw', authCheck, async(req, res) => {
         });
     } catch (err) {
         console.log(err);
-        throw new StatusError("cash가 부족합니다.", StatusCodes.BAD_REQUEST);
+        next(err);
     }
 });
 
@@ -124,18 +130,21 @@ router.post('/players/draw', authCheck, async(req, res) => {
     OVR-6: 4.6%
     OVR-9~: 3.5%
 ---------------------------------------------*/
-router.post('/players/upgrade', async(req, res) => {
+router.post('/players/upgrade', async(req, res, next) => {
     const {upgradePlayer, upgradeMaterials} = req.body;
 
-    //강화할 선수를 재료들로 성공할 확률 구하기 - DB접근 2회
-    let upgradePercent = await Utils.calcUpgradePercent(upgradePlayer, upgradeMaterials);
+    try{
+        //강화할 선수를 재료들로 성공할 확률 구하기 - DB접근 2회
+        let upgradePercent = await Utils.calcUpgradePercent(upgradePlayer, upgradeMaterials);
+        if(upgradePercent == null){
+            throw new StatusError('해당 선수 조회에 실패하였습니다.', StatusCodes.CONFLICT);
+        }
 
-    const randomNum = Math.random();
+        const randomNum = Math.random();
 
-    if(randomNum <= upgradePercent){
-        console.log("성공")
         const userPlayerIds = upgradeMaterials.map(material => material.userPlayerId);
-        try {
+        //성공 시
+        if(randomNum <= upgradePercent){
             const result = await prisma.$transaction(async (tx) =>{
                 // 1- 2 DB에 level 1추가
                 await tx.usersPlayers.update({
@@ -160,10 +169,21 @@ router.post('/players/upgrade', async(req, res) => {
                 }
             });
             return res.status(200).json({result: "성공", updatedPlayer});
-        } catch (error) {
-            throw new StatusError("트랜잭션 실패", StatusCodes.CONFLICT);
         }
+        else{
+            await prisma.usersPlayers.deleteMany({ 
+                where: {
+                    userPlayerId: {
+                        in: userPlayerIds
+                    },
+                },
+            });
+        }
+    } catch (error) {
+        console.log(error)
+        return next(error);
     }
+        //실패 시
 });
 
 export default router;
