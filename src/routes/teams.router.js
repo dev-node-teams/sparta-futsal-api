@@ -24,11 +24,7 @@ router.post(
     const { userPlayerId } = validation;
 
     const MAX_STARTING_COUNT = 3;
-
-    //@todo: test UserId 지울 것
     const userId = req.userId;
-
-    console.log(' userId ===>> ', userId);
 
     // 대상 선수 조회
     const targetPlayer = await prisma.usersPlayers.findFirst({
@@ -38,16 +34,13 @@ router.post(
       },
     });
 
-    console.log('==============>>>>111^^^11111  ', targetPlayer);
     if (!targetPlayer) {
       // 대상 선수가 없는 경우,
       throw new StatusError('해당 선수 조회에 실패하였습니다.', StatusCodes.BAD_REQUEST);
     } else if (targetPlayer.startingLine) {
-      console.log('asdasdasd????');
       // 이미 선발인 경우,
       throw new StatusError('이미 선발선수로 등록되어있습니다.', StatusCodes.CONFLICT);
     }
-    console.log('==============>>>>111^^^');
 
     const startingPlayers = await prisma.usersPlayers.findMany({
       select: { playerId: true },
@@ -57,11 +50,12 @@ router.post(
       },
     });
 
-    console.log('==============>>>>333');
-
     // 기존 선발선수의 수가 ${MAX_STARTING_COUNT}명 이상일 경우 // 3
     if (startingPlayers.length >= MAX_STARTING_COUNT) {
-      throw new Error('선발선수는 최대 ${MAX_STARTING_COUNT}명까지만 등록 가능합니다.');
+      throw new StatusError(
+        `선발선수는 최대 ${MAX_STARTING_COUNT}명까지만 등록 가능합니다.`,
+        StatusCodes.CONFLICT,
+      );
     }
 
     // 선발 목록에 같은 선수가 있는 경우,
@@ -73,13 +67,9 @@ router.post(
       },
     });
 
-    console.log('==============>>>>222');
-
     if (samePlayer) {
-      throw new Error('선발목록에 동일한 선수가 포함되어있습니다.');
+      throw new StatusError(`선발목록에 동일한 선수가 포함되어있습니다.`, StatusCodes.CONFLICT);
     }
-
-    console.log('==============>>>>111');
 
     // 선발 여부 변경
     const updatePlayer = await prisma.usersPlayers.update({
@@ -99,9 +89,7 @@ router.post(
       },
     });
 
-    console.log('==============>>>>');
-
-    return res.status(201).json({
+    return res.status(StatusCodes.CREATED).json({
       messages: `[${updatePlayer.user.nickname}]의 [${updatePlayer.players.playerName}] 선수를 선발선수로 등록하였습니다.`,
     });
   }),
@@ -135,10 +123,10 @@ router.delete(
 
     if (!targetPlayer) {
       // 대상 선수가 없는 경우,
-      throw new StatusError('해당 선수 조회에 실패하였습니다.', 400);
+      throw new StatusError(`해당 선수 조회에 실패하였습니다.`, StatusCodes.BAD_REQUEST);
     } else if (!targetPlayer.startingLine) {
       // 이미 선발이 아닌 경우,
-      throw new StatusError('해당 선수는 선발선수가 아닙니다.', 400);
+      throw new StatusError(`해당 선수는 선발선수가 아닙니다.`, StatusCodes.CONFLICT);
     }
 
     // 선발 여부 변경
