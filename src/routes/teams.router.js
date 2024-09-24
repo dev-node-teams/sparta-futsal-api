@@ -188,6 +188,7 @@ router.get(
 /** 보유선수 목록 조회  */
 router.get(
   '/teams/players',
+  authMiddleware,
   asyncHandler(async (req, res, next) => {
     const userId = req.userId;
 
