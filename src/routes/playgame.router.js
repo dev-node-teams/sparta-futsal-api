@@ -18,8 +18,6 @@ router.post('/game/:opponent', authMiddleware, async (req, res) => {
         const { opponent } = req.params; // 상대 정보
         const userId = req.userId; // 로그인한 유저 ID
 
-        console.log(' asdasd??? ', userId);
-
         // 로그인한 유저의 선발 선수 정보 가져오기
         const aUserPlayers = await prisma.usersPlayers.findMany({
             where: {
@@ -175,7 +173,6 @@ async function startGame(userId, opponentId) {
 
         // 경기 결과 도출
         const { aScore, bScore, result } = determineWinner(aUserTeamScore, bUserTeamScore);
-        console.log("===========>", aScore, bScore);
 
         // 플레이어 레이팅 업데이트
         const winnerId = result.includes('A 플레이어 승리') ? userId : opponentId;
@@ -183,8 +180,7 @@ async function startGame(userId, opponentId) {
 
         return { result, winnerId, loserId, aScore, bScore };
     } catch (error) {
-        throw new Error('게임 진행 중 오류 발생: ' + error.message);
-        
+        throw new StatusError('게임 진행 중 오류 발생: ' + error.message);
     }
 }
 

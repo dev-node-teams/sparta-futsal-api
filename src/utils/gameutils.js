@@ -1,5 +1,6 @@
 import { prisma } from '../utils/prisma/index.js';
 import StatusError from '../errors/status.error.js';
+import { StatusCodes } from 'http-status-codes';
 
 export function calculateTeamScore(team) {
   // 팀의 총 점수를 계산
@@ -79,7 +80,6 @@ export async function saveGameResultAndUpdateRating(user1Id, user2Id, user1Score
       }),
     ]);
   } catch (error) {
-    console.error("Error saving game result and updating ratings:", error);
-    throw new StatusError('경기 결과 저장 및 점수 업데이트 중 오류 발생', 500);
+    throw new StatusError('경기 결과 저장 및 점수 업데이트 중 오류 발생', StatusCodes.BAD_GATEWAY);
   }
 }
