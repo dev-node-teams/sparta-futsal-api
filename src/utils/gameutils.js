@@ -1,4 +1,6 @@
 import { prisma } from '../utils/prisma/index.js';
+import StatusError from '../errors/status.error.js';
+import { StatusCodes } from 'http-status-codes';
 
 export function calculateTeamScore(team) {
   // 팀의 총 점수를 계산
@@ -49,41 +51,35 @@ export function determineWinner(scoreA, scoreB) {
   }
 }
 
-// 경기 결과를 game_results 테이블에 저장
-export async function saveGameResult(user1Id, user2Id, user1Point, user2Point) {
+// 경기 결과 저장 및 레이팅 점수 조절
+export async function saveGameResultAndUpdateRating(user1Id, user2Id, user1Score, user2Score) {
+  const user1Point = user1Score;
+  const user2Point = user2Score;
+  const ratingChange = 10;
+  const winnerId = user1Point > user2Point ? user1Id : user2Id;
+  const loserId = winnerId === user1Id ? user2Id : user1Id;
+
   try {
-    console.log('@@@@@@@@====>>>>> ', user1Id, user2Id, user1Point, user2Point);
-
-    await prisma.gameResults.create({
-      data: {
-        user1Id,
-        user2Id,
-        user1Point,
-        user2Point,
-      },
-    });
-  } catch (error) {
-    throw new Error('점수 업데이트 중 오류 발생');
-  }
-}
-
-// 경기 결과를 토대로 승자와 패자의 레이팅점수 조절
-export async function updatePlayerRating(winnerId, loserId) {
-  const ratingchange = 10;
-  try {
-    console.log('====>>>>> ', winnerId, loserId);
-
+    // 트랜잭션으로 처리
     await prisma.$transaction([
+      prisma.gameResults.create({
+        data: {
+          user1Id: user1Id,
+          user2Id: user2Id,
+          user1Point: user1Point,
+          user2Point: user2Point,
+        },
+      }),
       prisma.users.update({
         where: { id: winnerId },
-        data: { rating: { increment: ratingchange } }, // 승자는 10점 추가
+        data: { rating: { increment: ratingChange } }, // 승자는 10점 추가
       }),
       prisma.users.update({
         where: { id: loserId },
-        data: { rating: { decrement: ratingchange } }, // 패자는 10점 감소
+        data: { rating: { decrement: ratingChange } }, // 패자는 10점 감소
       }),
     ]);
   } catch (error) {
-    throw new Error('점수 업데이트 중 오류 발생');
+    throw new StatusError('경기 결과 저장 및 점수 업데이트 중 오류 발생', StatusCodes.BAD_GATEWAY);
   }
 }
