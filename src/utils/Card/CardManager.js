@@ -10,17 +10,28 @@ class CardManager{
     }
 
     async init(){
-        const players = await prisma.players.findMany(); //DB 누적 접근: 2
-        const legendPlayers = await prisma.players.findMany({
-        where: { rarity: 10 },
-        select: {
-            playerId: true,
-            rarity: true
-        }
+        const cardPackPlayers = await prisma.cardpack.findMany({
+            include: {
+                cardpack_players: {
+                    select: {
+                        playerId: true,
+                        rarity: true
+                    },
+                    where: {
+                        rarity: 10
+                    }
+                }
+            }
         });
 
-        this.addCardPack("모든 선수 팩", players, 100);
-        this.addCardPack("전설 팩", legendPlayers, 500);
+        cardPackPlayers.forEach((cardPack) => {
+            const packName = cardPack.packName;  // 카드팩 이름
+            const players = cardPack.cardpack_players;  // 카드팩에 포함된 플레이어들
+            const cost = 1000;  // 예를 들어 고정된 가격을 사용하거나 cardPack에서 cost를 추출할 수 있음
+        
+            // addCardPack에 packName, players, cost를 전달
+            this.addCardPack(packName, players, cost);
+        });
     }
     
 

@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client'
 import { Utils } from '../utils/utils.js';
 import authCheck from '../middlewares/auth.middleware.js';
 import { cardManager } from '../utils/Card/CardManager.js';
+import { StatusCodes } from 'http-status-codes';
 const router = express.Router();
 
 /*---------------------------------------------
@@ -57,15 +58,13 @@ router.post('/players/draw', authCheck, async(req, res) => {
             }
         });
         if(!user){
-            return res.status(409).json({
-                message: "유효하지 않은 유저입니다.", 
-            })
+            throw new StatusError('해당 선수 조회에 실패하였습니다.', StatusCodes.CONFLICT);
         }
 
 
         //1-1. 충분하지 않다면, 400반환
         if(user.cash < cost){
-            return res.status(400).send("cash가 부족합니다.")
+            throw new StatusError("cash가 부족합니다.", StatusCodes.CONFLICT);
         }
 
         //1-2 무작위 선수 뽑기
@@ -103,10 +102,7 @@ router.post('/players/draw', authCheck, async(req, res) => {
         });
     } catch (err) {
         console.log(err);
-        return res.status(400).json({
-            message: "트랜잭션 실패",
-            throw: err.message
-        }); 
+        throw new StatusError("cash가 부족합니다.", StatusCodes.BAD_REQUEST);
     }
 });
 
@@ -134,39 +130,39 @@ router.post('/players/upgrade', async(req, res) => {
     let upgradePercent = await Utils.calcUpgradePercent(upgradePlayer, upgradeMaterials);
 
     const randomNum = Math.random();
-    console.log(upgradePercent);
+
     if(randomNum <= upgradePercent){
         console.log("성공")
         const userPlayerIds = upgradeMaterials.map(material => material.userPlayerId);
-        const result = await prisma.$transaction(async (tx) =>{
-            // 1- 2 DB에 level 1추가
-            await tx.usersPlayers.update({
-                where: {userPlayerId: upgradePlayer.userPlayerId},
-                data: { level: { increment: 1 } }
-            });
-    
-            // 1-2 강화 재료 DB에서 제거 
-            await tx.usersPlayers.deleteMany({ 
-                where: {
-                    userPlayerId: {
-                        in: userPlayerIds
+        try {
+            const result = await prisma.$transaction(async (tx) =>{
+                // 1- 2 DB에 level 1추가
+                await tx.usersPlayers.update({
+                    where: {userPlayerId: upgradePlayer.userPlayerId},
+                    data: { level: { increment: 1 } }
+                });
+        
+                // 1-2 강화 재료 DB에서 제거 
+                await tx.usersPlayers.deleteMany({ 
+                    where: {
+                        userPlayerId: {
+                            in: userPlayerIds
+                        },
                     },
-                },
+                });
             });
-        });
-        const updatedPlayer = await prisma.usersPlayers.findUnique({ 
-            where: { userPlayerId: upgradePlayer.userPlayerId },
-            select: {
-                playerId: true,
-                level: true
-            }
-        });
-        console.log(upgradePercent);
-        return res.status(200).json({result: "성공", updatedPlayer});
+            const updatedPlayer = await prisma.usersPlayers.findUnique({ 
+                where: { userPlayerId: upgradePlayer.userPlayerId },
+                select: {
+                    playerId: true,
+                    level: true
+                }
+            });
+            return res.status(200).json({result: "성공", updatedPlayer});
+        } catch (error) {
+            throw new StatusError("트랜잭션 실패", StatusCodes.CONFLICT);
+        }
     }
-
-    return res.status(200).json({result: "실패"});
-    
 });
 
 export default router;

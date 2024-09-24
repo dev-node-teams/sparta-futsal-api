@@ -106,10 +106,10 @@ export class Utils{
 
         //강화할 선수 OVR가져오기 
         let upgradePlayerOVR = await prisma.$queryRaw`
-            SELECT user_player_id, player_name, level, FLOOR(SUM(speed + finishing + shot_power + defense + stamina)/5) as OVR
-            FROM players a  JOIN users_players b USING (playerId)
-            WHERE b.user_player_id = ${upgradePlayer.userPlayerId}
-            GROUP BY user_player_id;
+            SELECT userPlayerId, player_name, level, FLOOR(SUM(speed + finishing + shotPower + defense + stamina)/5) as OVR
+            FROM players a  JOIN usersPlayers b USING (playerId)
+            WHERE b.userPlayerId = ${upgradePlayer.userPlayerId}
+            GROUP BY userPlayerId;
         `;
         if(upgradePlayerOVR.length == 0){
             throw new Error("유효하지 않은 upgradePlayerOVR");
@@ -120,12 +120,12 @@ export class Utils{
 
         // 강화 재료들의 OVR 가져오기 
         const upgradeMaterialsOVR = await prisma.$queryRaw` 
-            SELECT user_player_id, level, player_name, FLOOR(SUM(speed + finishing + shot_power + defense + stamina)/5) as OVR
+            SELECT userPlayerId, level, playerName, FLOOR(SUM(speed + finishing + shotPower + defense + stamina)/5) as OVR
             FROM players a 
-            JOIN users_players b 
+            JOIN usersPlayers b 
             USING (playerId)
-            WHERE b.user_player_id IN (${Prisma.join(arr)})
-            GROUP BY user_player_id;
+            WHERE b.userPlayerId IN (${Prisma.join(arr)})
+            GROUP BY userPlayerId;
         `;
         if(upgradeMaterialsOVR.length == 0){
             throw new Error("유효하지 않은 upgradeMaterialsOVR");
