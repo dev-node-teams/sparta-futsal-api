@@ -30,10 +30,10 @@ router.post('/game/:opponent', authMiddleware, asyncHandler( async (req, res, ne
             },
         });
 
-        // 상대 유저의 선발 선수 정보 가져오기
+        // userId와 startingLine으로 상대 유저의 선발 선수 정보 가져오기
         const bUserPlayers = await prisma.usersPlayers.findMany({
             where: {
-                userId: parseInt(opponent), // opponent는 문자열이므로 숫자로 변환
+                userId: parseInt(opponent),
                 startingLine: true,
             },
             include: {
@@ -51,7 +51,6 @@ router.post('/game/:opponent', authMiddleware, asyncHandler( async (req, res, ne
         const { aScore, bScore, result } = determineWinner(aUserTeamScore, bUserTeamScore);
 
         const winnerId = result.includes('A 플레이어 승리') ? userId : parseInt(opponent);
-        const loserId = winnerId === userId ? parseInt(opponent) : userId;
 
         // 경기 결과에 따른 유저 레이팅 증가, 감소
         await saveGameResultAndUpdateRating(userId, parseInt(opponent), aScore, bScore);
@@ -113,10 +112,9 @@ router.post('/matchmaking', authMiddleware,asyncHandler( async (req, res, next) 
                 rating: true,
             },
         });
-        
         // 조회된 유저들 중에서 선발 선수가 3명 이상인 유저만 필터링합니다.
         const matchOpponents = [];
-        
+    
         for (const user of potentialOpponents) {
             const startingPlayersCount = await prisma.usersPlayers.count({
                 where: {
@@ -138,7 +136,7 @@ router.post('/matchmaking', authMiddleware,asyncHandler( async (req, res, next) 
         const selectedOpponent = matchOpponents[randomIndex];
 
         // 경기 진행 (기존의 게임 API 재사용)
-        const { result, winnerId, loserId, aScore, bScore } = await startGame(userId, selectedOpponent.id);
+        const { result, winnerId, aScore, bScore } = await startGame(userId, selectedOpponent.id);
 
         await saveGameResultAndUpdateRating(userId, selectedOpponent.id, aScore, bScore);
 
@@ -203,9 +201,8 @@ async function startGame(userId, opponentId) {
 
         // 플레이어 레이팅 업데이트
         const winnerId = result.includes('A 플레이어 승리') ? userId : opponentId;
-        const loserId = winnerId === userId ? opponentId : userId;
 
-        return { result, winnerId, loserId, aScore, bScore };
+        return { result, winnerId, aScore, bScore };
     } catch (error) {
         throw new StatusError('오류 발생', StatusCodes.NOT_FOUND);
     }
