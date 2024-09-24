@@ -125,7 +125,7 @@ router.post('/matchmaking', authMiddleware,asyncHandler( async (req, res, next) 
                 },
             });
         
-            if (startingPlayersCount = 3) { // 선발등록되있는 선수가 3명인 유저만 검색
+            if (startingPlayersCount === 3) { // 선발등록되있는 선수가 3명인 유저만 검색
                 matchOpponents.push(user); // matchOpponents에 push
             }
         }
