@@ -6,6 +6,7 @@ import playerRouter from './routes/players.router.js';
 import cookieParser from 'cookie-parser';
 import playgameRouter from './routes/playgame.router.js';
 import errorMiddleware from './middlewares/error.middleware.js';
+import ranksRouter from './routes/ranks.router.js';
 
 // .env => process.env
 dotenv.config();
@@ -15,7 +16,7 @@ const PORT = 3000;
 
 app.use(express.json());
 
-app.use('/api', [usersRouter, teamsRouter, playerRouter, playgameRouter]);
+app.use('/api', [usersRouter, teamsRouter, playerRouter, playgameRouter, ranksRouter]);
 
 app.use(cookieParser());
 

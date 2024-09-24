@@ -4,7 +4,7 @@ import asyncHandler from 'express-async-handler';
 import { prisma } from '../utils/prisma/index.js';
 import authMiddleware from '../middlewares/auth.middleware.js';
 import StatusError from '../errors/status.error.js';
-import { StatusCodes } from 'http-status-codes';
+import { OK, StatusCodes } from 'http-status-codes';
 
 const router = express.Router();
 
@@ -162,6 +162,69 @@ router.delete(
     return res.status(200).json({
       messages: `[${updatePlayer.user.nickname}]의 [${updatePlayer.players.playerName}] 선수를 선발에서 해제하였습니다.`,
     });
+  }),
+);
+
+/** 나만의 선발 목록 조회  */
+router.get(
+  '/teams/starting',
+  authMiddleware,
+  asyncHandler(async (req, res, next) => {
+    const userId = req.userId;
+
+    const startingPlayers = await prisma.usersPlayers.findMany({
+      select: {
+        userPlayerId: true,
+        players: {
+          select: {
+            playerId: true,
+            playerName: true,
+            speed: true,
+            finishing: true,
+            shotPower: true,
+            defense: true,
+            stamina: true,
+          },
+        },
+      },
+      where: {
+        userId: userId,
+        startingLine: true,
+      },
+    });
+
+    return res.status(StatusCodes.OK).json({ data: startingPlayers });
+  }),
+);
+
+/** 보유선수 목록 조회  */
+router.get(
+  '/teams/players',
+  asyncHandler(async (req, res, next) => {
+    const userId = req.userId;
+
+    const players = await prisma.usersPlayers.findMany({
+      select: {
+        userPlayerId: true,
+        startingLine: true,
+        players: {
+          select: {
+            playerId: true,
+            playerName: true,
+            speed: true,
+            finishing: true,
+            shotPower: true,
+            defense: true,
+            stamina: true,
+          },
+        },
+      },
+      where: {
+        userId: userId,
+      },
+    });
+
+    return res.status(StatusCodes.OK).json({ data: players });
   }),
 );
 
