@@ -14,22 +14,16 @@ export function calculateTeamScore(team) {
   let totalScore = 0;
 
   for (const userPlayer of team) {
-    // 계속 userPlayer에서 선수 스탯을 못불러와서 직접 접근시킴.
+    // 선수들의 정보를 가져옴
     const player = userPlayer.players;
-
-    // 숫자로 변환
-    const speed = Number(player.speed);
-    const finishing = Number(player.finishing);
-    const shotPower = Number(player.shotPower);
-    const defense = Number(player.defense);
-    const stamina = Number(player.stamina);
+    
     // 점수 계산
     totalScore +=
-      speed * weights.speed +
-      finishing * weights.goalScoring +
-      shotPower * weights.shotPower +
-      defense * weights.defense +
-      stamina * weights.stamina;
+      player.speed * weights.speed +
+      player.finishing * weights.goalScoring +
+      player.shotPower * weights.shotPower +
+      player.defense * weights.defense +
+      player.stamina * weights.stamina;
   }
   return totalScore;
 }
