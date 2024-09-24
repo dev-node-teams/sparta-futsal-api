@@ -8,11 +8,12 @@ import {
 import authMiddleware from '../middlewares/auth.middleware.js';
 import StatusError from '../errors/status.error.js';
 import { StatusCodes } from 'http-status-codes';
+import asyncHandler from 'express-async-handler';
 
 const router = express.Router();
 
 // 상대를 지정해서 하는 게임 플레이
-router.post('/game/:opponent', authMiddleware, async (req, res) => {
+router.post('/game/:opponent', authMiddleware, asyncHandler( async (req, res, next) => {
     // 상대 유저의 정보와 팀 데이터를 가져옵니다.
     try {
         const { opponent } = req.params; // 상대 정보
@@ -69,15 +70,18 @@ router.post('/game/:opponent', authMiddleware, async (req, res) => {
         // 결과 출력
         res.json({ result, ...matchResultMessage, '나의 점수': updatedUserRaiting.rating });
     } catch (error) {
-        if (error instanceof StatusError) {
-            return res.status(error.statusCode).json({ error: error.message });
+        if(error instanceof StatusError){ // 코드 안에서 터질때
+            throw error;
         }
-        res.status(500).json({ message: '서버 오류가 발생했습니다.' });
+        else{
+            console.log(error);
+            throw new StatusError('오류 발생', StatusCodes.NOT_FOUND);
+        }
     }
-});
+}));
 
 // 점수 기반 자동 매치 메이킹 API
-router.post('/matchmaking', authMiddleware, async (req, res) => {
+router.post('/matchmaking', authMiddleware,asyncHandler( async (req, res, next) => {
     try {
         const userId = req.userId; // 실제로는 로그인한 유저의 ID를 사용해야 함
 
@@ -95,7 +99,7 @@ router.post('/matchmaking', authMiddleware, async (req, res) => {
         const ratingRange = 100; // ±100점 범위 설정 (필요시 조정 가능)
 
         // 현재 유저의 점수 ±100점 내의 유저들 조회 (자기 자신은 제외)
-        const matchOpponents = await prisma.users.findMany({
+        const potentialOpponents = await prisma.users.findMany({ 
             where: {
                 id: { not: userId }, // 본인 제외
                 rating: {
@@ -103,13 +107,33 @@ router.post('/matchmaking', authMiddleware, async (req, res) => {
                     lte: userRating + ratingRange, // 최대 점수
                 },
             },
-            select: { id: true, nickname: true, rating: true },
+            select: {
+                id: true,
+                nickname: true,
+                rating: true,
+            },
         });
-
+        
+        // 조회된 유저들 중에서 선발 선수가 3명 이상인 유저만 필터링합니다.
+        const matchOpponents = [];
+        
+        for (const user of potentialOpponents) {
+            const startingPlayersCount = await prisma.usersPlayers.count({
+                where: {
+                    userId: user.id,
+                    startingLine: true,
+                },
+            });
+        
+            if (startingPlayersCount = 3) { // 선발등록되있는 선수가 3명인 유저만 검색
+                matchOpponents.push(user); // matchOpponents에 push
+            }
+        }
         if (matchOpponents.length === 0) {
             throw new StatusError('매칭 가능한 유저가 없습니다.', StatusCodes.NOT_FOUND);
         }
-        // 랜덤으로 상대방 선택
+        
+        // 랜덤하게 상대방 선택
         const randomIndex = Math.floor(Math.random() * matchOpponents.length);
         const selectedOpponent = matchOpponents[randomIndex];
 
@@ -135,13 +159,16 @@ router.post('/matchmaking', authMiddleware, async (req, res) => {
             ...matchResultMessage,
             '나의 점수': updatedUserRaiting.rating,
         });
-    } catch (error) {
-        if (error instanceof StatusError) {
-            return res.status(error.statusCode).json({ error: error.message });
+    } catch (error) { 
+        if(error instanceof StatusError){ // 코드 안에서 터질때
+            throw error;
         }
-        res.status(500).json({ error: '서버 오류가 발생했습니다.' });
+        else{
+            console.error(error);
+            throw new StatusError('오류 발생', StatusCodes.NOT_FOUND);
+        }
     }
-});
+}));
 
 // 기존의 경기 진행 로직을 재사용
 async function startGame(userId, opponentId) {
@@ -180,7 +207,7 @@ async function startGame(userId, opponentId) {
 
         return { result, winnerId, loserId, aScore, bScore };
     } catch (error) {
-        throw new StatusError('게임 진행 중 오류 발생: ' + error.message);
+        throw new StatusError('오류 발생', StatusCodes.NOT_FOUND);
     }
 }
 
