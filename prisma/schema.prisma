@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model users {
+  id           Int            @id @default(autoincrement())
+  email        String         @unique
+  password     String
+  nickname     String         @unique
+  cash         Int            @default(10000)
+  rating       Int            @default(1000)
+  createdDate  DateTime       @default(now()) @map("created_date")
+  updatedDate  DateTime?      @updatedAt @map("updated_date")
+  gameResults1 gameResults[]  @relation("user1")
+  gameResults2 gameResults[]  @relation("user2")
+  usersPlayers usersPlayers[]
+}
+
+model players {
+  playerId         Int                @id @default(autoincrement())
+  playerName       String             @map("player_name")
+  speed            Int
+  finishing        Int
+  shotPower        Int                @map("shot_power")
+  defense          Int
+  stamina          Int
+  rarity           Int                @default(0) @db.TinyInt
+  createdDate      DateTime           @default(now()) @map("created_date")
+  updatedDate      DateTime?          @updatedAt @map("updated_date")
+  cardpack_players cardpack_players[]
+  users_players    usersPlayers[]
+}
+
+model usersPlayers {
+  userPlayerId Int       @id @default(autoincrement()) @map("user_player_id")
+  userId       Int       @map("user_id")
+  playerId     Int
+  level        Int
+  startingLine Boolean   @default(false) @map("starting_line")
+  createdDate  DateTime  @default(now()) @map("created_date")
+  updatedDate  DateTime? @updatedAt @map("updated_date")
+  players      players   @relation(fields: [playerId], references: [playerId], onDelete: NoAction, onUpdate: NoAction, map: "users_playerID")
+  user         users     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([playerId], map: "users_players_player_id_fkey")
+  @@index([userId], map: "users_players_user_id_fkey")
+  @@map("users_players")
+}
+
+model gameResults {
+  game_results_id Int       @id @default(autoincrement())
+  user1Id         Int       @map("user1_id")
+  user2Id         Int       @map("user2_id")
+  user1Point      Int       @map("user1_point")
+  user2Point      Int       @map("user2_point")
+  createdDate     DateTime  @default(now()) @map("created_date")
+  updatedDate     DateTime? @updatedAt @map("updated_date")
+  user1           users     @relation("user1", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2           users     @relation("user2", fields: [user2Id], references: [id], onDelete: Cascade)
+
+  @@index([user1Id], map: "game_results_user1_id_fkey")
+  @@index([user2Id], map: "game_results_user2_id_fkey")
+  @@map("game_results")
+}
+
+model cardpack {
+  cardpackId       Int                @id @default(autoincrement())
+  packName         String             @db.VarChar(30)
+  cost             Int
+  cardpack_players cardpack_players[]
+}
+
+model cardpack_players {
+  cardpackId Int
+  playerId   Int
+  rarity     Int?
+  cardpack   cardpack @relation(fields: [cardpackId], references: [cardpackId], onDelete: NoAction, onUpdate: NoAction, map: "cardpack_players_cardPackID")
+  players    players  @relation(fields: [playerId], references: [playerId], onDelete: NoAction, onUpdate: NoAction, map: "cardpack_players_playerID")
+
+  @@id([cardpackId, playerId])
+  @@index([playerId], map: "cardpack_players_playerID")
+}
