@@ -6,7 +6,7 @@
 | 전봉준 | 조정현 | 노승현 | 이상현 | 유성민 |  
 | :---------: | :-------------------------: | :---------------: | :-----------: |  :---------------: | 
 | INTP | INTP | ISFJ | ISTP | INTP |  
-| <p><img src="https://avatars.githubusercontent.com/u/95843762?v=4" width="350px" height="150px"/></p> | <p><img src="https://avatars.githubusercontent.com/u/47106579?v=4" width="400px" height="150px"/></p> | <p><img src="https://avatars.githubusercontent.com/u/64311828?v=4" width="400px" height="150px"/></p> | <p><img src="https://avatars.githubusercontent.com/u/149569986?v=4" width="300px" height="150px"/></p> | <p><img src="https://avatars.githubusercontent.com/u/48234706?v=4" width="400px" height="150px"/></p> | 
+| <p><img src="https://avatars.githubusercontent.com/u/95843762?v=4" width="350px" height="150px"/></p> | <p><img src="https://avatars.githubusercontent.com/u/47106579?v=4" width="400px" height="150px"/></p> | <p><img src="https://avatars.githubusercontent.com/u/64311828?v=4" width="400px" height="150px"/></p> | <p><img src="https://avatars.githubusercontent.com/u/149569986?v=4" width="200px" height="130px"/></p> | <p><img src="https://avatars.githubusercontent.com/u/48234706?v=4" width="350px" height="150px"/></p> | 
 |  [@devbong92](https://github.com/devbong92) | [@im-cjh](https://github.com/im-cjh) | [@NSHkw](https://github.com/NSHkw) | [@LeeSanghyun1212](https://github.com/LeeSanghyun1212) | [@endlesssleep](https://github.com/endlesssleep) | 
 | [Blog Link](https://velog.io/@vamuzz) | [Notion Link](https://www.notion.so/cannons/97fee3418a554ce38ca0046be9b1ee8c?v=fb0be7ffa18046bcb0ef78123e17c872) | [Blog Link](https://velog.io/@lmyno) | [Blog Link](https://velog.io/@tlfqjcuku) | [Blog Link](https://esleep.tistory.com/) |
 
