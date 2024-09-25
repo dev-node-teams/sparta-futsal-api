@@ -20,6 +20,36 @@
 ## API 명세서 
 ![image](https://github.com/user-attachments/assets/474e7d20-595d-4c49-aa46-0f02750566fd)
 
+## 프로젝트 구조 
+```
+📁 ROOT
+├── README.md
+├── package-lock.json
+├── package.json
+├── 📁 prisma
+│   └── schema.prisma
+└── 📁 src
+    ├── app.js
+    ├── 📁 errors
+    │   └── status.error.js
+    ├── 📁 middlewares
+    │   ├── auth.middleware.js
+    │   └── error.middleware.js
+    ├── 📁 routes
+    │   ├── players.router.js
+    │   ├── playgame.router.js
+    │   ├── ranks.router.js
+    │   ├── teams.router.js
+    │   └── users.router.js
+    └── 📁 utils
+        ├── 📁 Card
+        │   ├── CardManager.js
+        │   └── CardPack.js
+        ├── gameutils.js
+        ├── 📁 prisma
+        │   └── index.js
+        └── utils.js
+```
 
 # 강화
 
