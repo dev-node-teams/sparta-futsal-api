@@ -1,6 +1,25 @@
 # 풋살 온라인 프로젝트
 
-> 풋살해조(1조)
+## 풋살해조(1조)
+**팀원 소개**
+---
+| 전봉준 | 조정현 | 노승현 | 이상현 | 유성민 |  
+| :---------: | :-------------------------: | :---------------: | :-----------: |  :---------------: | 
+| INTP | INTP | ISFJ | ISTP | INTP |  
+| <p><img src="https://avatars.githubusercontent.com/u/95843762?v=4" width="350px" height="150px"/></p> | <p><img src="https://avatars.githubusercontent.com/u/47106579?v=4" width="400px" height="150px"/></p> | <p><img src="https://avatars.githubusercontent.com/u/64311828?v=4" width="400px" height="150px"/></p> | <p><img src="https://avatars.githubusercontent.com/u/149569986?v=4" width="300px" height="150px"/></p> | <p><img src="https://avatars.githubusercontent.com/u/48234706?v=4" width="400px" height="150px"/></p> | 
+|  [@devbong92](https://github.com/devbong92) | [@im-cjh](https://github.com/im-cjh) | [@NSHkw](https://github.com/NSHkw) | [@LeeSanghyun1212](https://github.com/LeeSanghyun1212) | [@endlesssleep](https://github.com/endlesssleep) | 
+| [Blog Link](https://velog.io/@vamuzz) | [Notion Link](https://www.notion.so/cannons/97fee3418a554ce38ca0046be9b1ee8c?v=fb0be7ffa18046bcb0ef78123e17c872) | [Blog Link](https://velog.io/@lmyno) | [Blog Link](https://velog.io/@tlfqjcuku) | [Blog Link](https://esleep.tistory.com/) |
+
+## 시연영상 LINK
+[![시연영상_YOUTUBE](https://github.com/user-attachments/assets/653e6357-f970-49ab-8226-28b77bd1e30f)](https://www.youtube.com/watch?v=hhB_ayn0KYE) 
+
+
+## ERD
+<img width="428" alt="image" src="https://github.com/user-attachments/assets/e41bde0d-710d-46d0-a182-900ef958735c">
+
+## API 명세서 
+![image](https://github.com/user-attachments/assets/474e7d20-595d-4c49-aa46-0f02750566fd)
+
 
 # 강화
 
@@ -59,3 +78,9 @@
    난수의 값이 성공 확률보다 작으면 실패로 간주
    강화 재료를 DB에서 제거
    "실패" 메시지 전송
+
+-----
+
+## 소감
+![image](https://github.com/user-attachments/assets/279ec310-aa77-434f-b0de-2851abd11b76)
+
